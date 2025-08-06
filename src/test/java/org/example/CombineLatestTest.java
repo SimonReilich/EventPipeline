@@ -1,0 +1,43 @@
+package org.example;
+
+import org.example.events.Event;
+import org.example.nodes.CombineLatest;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class CombineLatestTest {
+
+    @Test
+    @DisplayName("CombineLatest")
+    void testCombineLatest() {
+        var node = new CombineLatest("A", "B", "C");
+
+        assertTrue(node.give(new Event<>("B", -1, 0)).isPresent());
+        assertTrue(node.give(new Event<>("C", 1, 50)).isPresent());
+        assertTrue(node.give(new Event<>("B", 1, 50)).isPresent());
+
+        var optRes = node.give(new Event<>("A", 1, 100));
+        assertTrue(optRes.isPresent());
+        var result = optRes.get();
+
+        assertEquals(100, result.getTimestamp());
+        assertTrue(result.getAllTypes().stream().anyMatch(s -> s.equals("CombineLatest(A, B, C)[" + node.hashCode() + "]")));
+        assertArrayEquals(new Object[]{1, 1, 1}, (Object[]) (result.getValue("CombineLatest(A, B, C)[" + node.hashCode() + "]")));
+    }
+
+    @Test
+    @DisplayName("CombineLatest Event")
+    void testCombineLatestDrivingEvent() {
+        var node = new CombineLatest("A", "B", "C");
+        assertTrue(node.give(new Event<>("A", 0, 0)).isPresent());
+    }
+
+    @Test
+    @DisplayName("CombineLatest foreign Event")
+    void testCombineLatestForeignEvent() {
+        var node = new CombineLatest("A", "B", "C");
+        assertFalse(node.give(new Event<>("D", 0, 0)).isPresent());
+    }
+}
