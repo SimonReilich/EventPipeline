@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 public class CombineLatest extends Node {
 
     private final Node[] children;
+    private final Map<String, Object> values;
 
     public CombineLatest(Node... children) {
         this.children = children;
@@ -16,8 +17,8 @@ public class CombineLatest extends Node {
     }
 
     @Override
-    protected Set<String> accepts() {
-        return children().stream().map(Node::getOutputSignalName).collect(Collectors.toSet());
+    public Set<String> accepts() {
+        return children().stream().flatMap(n -> n.accepts().stream()).collect(Collectors.toSet());
     }
 
     @Override
@@ -32,10 +33,9 @@ public class CombineLatest extends Node {
                 ")[" + this.hashCode() + "]";
     }
 
-    private final Map<String, Object> values;
-
     @Override
     protected void supply(Event<?> input) {
+        Main.logEventSupplied(input);
         Arrays.stream(children)
                 .map(c -> c.give(input))
                 .filter(Optional::isPresent)
@@ -52,7 +52,8 @@ public class CombineLatest extends Node {
                         input.getTimestamp()
                 )
         );
-        result.ifPresent(Main::logEvent);
+        result.ifPresent(Main::logEventTriggerd);
         return result;
     }
+
 }

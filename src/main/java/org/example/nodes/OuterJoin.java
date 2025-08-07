@@ -10,6 +10,7 @@ public class OuterJoin extends Node {
 
     private final Node driving;
     private final Node[] other;
+    private final Map<String, Object> values;
 
     public OuterJoin(Node driving, Node... other) {
         this.driving = driving;
@@ -18,7 +19,7 @@ public class OuterJoin extends Node {
     }
 
     @Override
-    protected Set<String> accepts() {
+    public Set<String> accepts() {
         var accepts = new HashSet<>(driving.accepts());
         Arrays.stream(other).forEach(node -> accepts.addAll(node.accepts()));
         return accepts;
@@ -40,10 +41,9 @@ public class OuterJoin extends Node {
                 ")[" + this.hashCode() + "]";
     }
 
-    private final Map<String, Object> values;
-
     @Override
     protected void supply(Event<?> input) {
+        Main.logEventSupplied(input);
         Arrays.stream(other)
                 .filter(node -> node.accepts().contains(input.getName()))
                 .forEach(node -> node.supply(input));
@@ -72,7 +72,8 @@ public class OuterJoin extends Node {
                 values.entrySet().toArray(),
                 input.getTimestamp()
         ));
-        result.ifPresent(Main::logEvent);
+        result.ifPresent(Main::logEventTriggerd);
         return result;
     }
+
 }

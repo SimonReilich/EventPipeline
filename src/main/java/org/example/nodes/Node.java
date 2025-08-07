@@ -2,13 +2,16 @@ package org.example.nodes;
 
 import org.example.events.Event;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public abstract class Node {
 
     // dependencies of the node + synthetic signals
-    protected abstract Set<String> accepts();
+    public abstract Set<String> accepts();
 
     protected abstract List<Node> children();
 
@@ -45,4 +48,5 @@ public abstract class Node {
             return Optional.empty();
         }
     }
+
 }

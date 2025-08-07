@@ -19,7 +19,7 @@ public class Delay extends Node {
     }
 
     @Override
-    protected Set<String> accepts() {
+    public Set<String> accepts() {
         Set<String> accepts = new HashSet<>();
         accepts.add("Synthetic" + this.hashCode());
         accepts.addAll(node.accepts());
@@ -38,6 +38,7 @@ public class Delay extends Node {
 
     @Override
     protected void supply(Event<?> input) {
+        Main.logEventSupplied(input);
         var res = node.give(input);
         if (res.isPresent()) {
             saved.add(res.get());
@@ -58,10 +59,11 @@ public class Delay extends Node {
                         saved.poll().getData(),
                         input.getTimestamp())
                 );
-                result.ifPresent(Main::logEvent);
+                result.ifPresent(Main::logEventTriggerd);
                 return result;
             }
         }
         return Optional.empty();
     }
+
 }

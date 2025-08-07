@@ -3,7 +3,10 @@ package org.example.nodes;
 import org.example.Main;
 import org.example.events.Event;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 public class Previous extends Node {
 
@@ -17,7 +20,7 @@ public class Previous extends Node {
     }
 
     @Override
-    protected Set<String> accepts() {
+    public Set<String> accepts() {
         return new HashSet<>(node.accepts());
     }
 
@@ -33,6 +36,7 @@ public class Previous extends Node {
 
     @Override
     protected void supply(Event<?> input) {
+        Main.logEventSupplied(input);
         var res = node.give(input);
         res.ifPresent(event -> current = event);
     }
@@ -42,15 +46,16 @@ public class Previous extends Node {
         var temp = saved;
         saved = current;
         current = null;
-            if (temp != null) {
-                Optional<Event<?>> result = Optional.of(new Event<>(
-                        getOutputSignalName(),
-                        temp.getData(),
-                        input.getTimestamp())
-                );
-                result.ifPresent(Main::logEvent);
-                return result;
-            }
-            return Optional.empty();
+        if (temp != null) {
+            Optional<Event<?>> result = Optional.of(new Event<>(
+                    getOutputSignalName(),
+                    temp.getData(),
+                    input.getTimestamp())
+            );
+            result.ifPresent(Main::logEventTriggerd);
+            return result;
+        }
+        return Optional.empty();
     }
+
 }

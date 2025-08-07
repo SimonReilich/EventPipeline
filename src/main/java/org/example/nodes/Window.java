@@ -9,20 +9,19 @@ public class Window extends Node {
 
     public static final Character ITEM = 'I';
     public static final Character TIME = 'T';
-
+    public static final Character GROUP = 'G';
+    private final Node node;
+    private final PriorityQueue<Event<?>> queue;
     private Character rateMode;
     private long rate;
     private Character sizeMode;
     private long size;
-    private final Node node;
-    private final PriorityQueue<Event<?>> queue;
-
     private long counter;
 
     public Window(Character rateMode, long rate, Character sizeMode, long size, Node node) {
         super();
 
-        assert rateMode == ITEM || rateMode == TIME;
+        assert rateMode == ITEM || rateMode == TIME || rateMode == GROUP;
         assert sizeMode == ITEM || sizeMode == TIME;
 
         this.rateMode = rateMode;
@@ -34,9 +33,10 @@ public class Window extends Node {
     }
 
     @Override
-    protected Set<String> accepts() {
+    public Set<String> accepts() {
         Set<String> accepts = new HashSet<>();
         accepts.add("Synthetic" + this.hashCode());
+        accepts.add("SyntheticG" + this.hashCode());
         accepts.addAll(node.accepts());
         return accepts;
     }
@@ -53,7 +53,7 @@ public class Window extends Node {
 
     @Override
     protected void supply(Event<?> input) {
-        System.out.println("supplied to queue");
+        Main.logEventSupplied(input);
         var result = node.give(input);
         if (result.isPresent()) {
             if (queue.isEmpty()) {
@@ -71,7 +71,6 @@ public class Window extends Node {
 
     @Override
     protected Optional<Event<?>> trigger(Event<?> input) {
-        System.out.println("triggered queue");
         if (this.accepts().contains(input.getName())) {
             if (sizeMode == ITEM) {
                 while (queue.size() > size) {
@@ -93,21 +92,31 @@ public class Window extends Node {
                             input.getTimestamp()
                     ));
                     queue.clear();
-                    Main.logEvent(res.get());
+                    Main.logEventTriggerd(res.get());
                     return res;
                 }
             } else if (rateMode == TIME && input.getName().equals("Synthetic" + this.hashCode())) {
                 Optional<Event<?>> res = Optional.of(new Event<>(
                         getOutputSignalName(),
-                        queue.toArray(),
+                        queue.stream().map(Event::getData).toArray(),
                         input.getTimestamp()
                 ));
                 queue.clear();
-                Main.logEvent(res.get());
+                Main.logEventTriggerd(res.get());
+                return res;
+            } else if (rateMode == GROUP && input.getName().equals("SyntheticG" + this.hashCode())) {
+                Optional<Event<?>> res = Optional.of(new Event<>(
+                        getOutputSignalName(),
+                        queue.stream().map(Event::getData).toArray(),
+                        input.getTimestamp()
+                ));
+                queue.clear();
+                Main.logEventTriggerd(res.get());
                 return res;
             }
         }
 
         return Optional.empty();
     }
+
 }

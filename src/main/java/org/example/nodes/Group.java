@@ -11,6 +11,7 @@ public class Group extends Node {
     private final Node driving;
     private final long tolerance;
     private final Node[] other;
+    private final Map<String, Event<?>> values;
 
     public Group(Node driving, Node... other) {
         this.driving = driving;
@@ -27,7 +28,7 @@ public class Group extends Node {
     }
 
     @Override
-    protected Set<String> accepts() {
+    public Set<String> accepts() {
         var accepts = new HashSet<>(driving.accepts());
         Arrays.stream(other).forEach(node -> accepts.addAll(node.accepts()));
         return accepts;
@@ -49,13 +50,16 @@ public class Group extends Node {
                 ")[" + this.hashCode() + "]";
     }
 
-    private final Map<String, Event<?>> values;
-
     @Override
     protected void supply(Event<?> input) {
+        Main.logEventSupplied(input);
+
         Arrays.stream(other)
                 .filter(node -> node.accepts().contains(input.getName()))
-                .forEach(node -> node.supply(input));
+                .forEach(node -> {
+                    node.supply(input);
+                    values.put(node.getOutputSignalName(), input);
+                });
 
         if (driving.accepts().contains(input.getName())) {
             driving.supply(input);
@@ -70,16 +74,34 @@ public class Group extends Node {
 
     @Override
     protected Optional<Event<?>> trigger(Event<?> input) {
-        Arrays.stream(other)
-                .filter(n -> n.accepts().contains(input.getName()))
-                .map(n -> n.trigger(input))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .forEach(e -> values.put(e.getName(), e));
 
         if (driving.accepts().contains(input.getName())) {
             var outputDriving = driving.trigger(input);
             if (outputDriving.isPresent()) {
+                Arrays.stream(other)
+                        .filter(node -> !(node instanceof Window))
+                        .map(n -> n.trigger(values.getOrDefault(n.getOutputSignalName(), new Event<>(
+                                Integer.toString(this.hashCode()),
+                                null,
+                                input.getTimestamp()
+                        ))))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .forEach(e -> values.put(e.getName(), e));
+
+                Arrays.stream(other)
+                        .filter(node -> node instanceof Window)
+                        .map(n -> n.trigger(
+                                new Event<>(
+                                        "SyntheticG" + n.hashCode(),
+                                        null,
+                                        input.getTimestamp()
+                                )
+                        ))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .forEach(e -> values.put(e.getName(), e));
+
                 values.put(outputDriving.get().getName(), outputDriving.get());
 
                 Optional<Event<?>> result = Optional.of(new Event<>(
@@ -90,11 +112,12 @@ public class Group extends Node {
                         input.getTimestamp()
                 ));
                 values.clear();
-                result.ifPresent(Main::logEvent);
+                result.ifPresent(Main::logEventTriggerd);
                 return result;
             }
         }
 
         return Optional.empty();
     }
+
 }

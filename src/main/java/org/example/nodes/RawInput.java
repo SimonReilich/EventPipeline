@@ -17,7 +17,7 @@ public class RawInput extends Node {
     }
 
     @Override
-    protected Set<String> accepts() {
+    public Set<String> accepts() {
         return Set.of(event);
     }
 
@@ -33,15 +33,16 @@ public class RawInput extends Node {
 
     @Override
     protected void supply(Event<?> input) {
-        return;
+        Main.logEventSupplied(input);
     }
 
     @Override
     protected Optional<Event<?>> trigger(Event<?> input) {
         if (Objects.equals(input.getName(), event)) {
-            Main.logEvent(input);
+            Main.logEventTriggerd(input);
             return Optional.of(input);
         }
         return Optional.empty();
     }
+
 }

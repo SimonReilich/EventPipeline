@@ -17,23 +17,23 @@ public class Event<T> implements Comparable<Event<T>> {
         this.data = data;
     }
 
-    public long getTimestamp() {
-        return timestamp;
-    }
-
     public static String dataToString(Object data) {
         return switch (data) {
             case Object[] objects ->
                     "[" + String.join(", ", Arrays.stream(objects).map(Event::dataToString).toList()) + "]";
-            case int[] ints ->
-                    "[" + String.join(", ", Arrays.stream(ints).mapToObj(Integer::toString).toList()) + "]";
-            case long[] longs ->
-                    "[" + String.join(", ", Arrays.stream(longs).mapToObj(Long::toString).toList()) + "]";
+            case Map.Entry<?, ?> entry ->
+                    "\n        (" + dataToString(entry.getKey()) + " => " + dataToString(entry.getValue()) + ")";
+            case int[] ints -> "[" + String.join(", ", Arrays.stream(ints).mapToObj(Integer::toString).toList()) + "]";
+            case long[] longs -> "[" + String.join(", ", Arrays.stream(longs).mapToObj(Long::toString).toList()) + "]";
             case double[] doubles ->
                     "[" + String.join(", ", Arrays.stream(doubles).mapToObj(Double::toString).toList()) + "]";
             case null -> "-";
             default -> data.toString();
         };
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 
     public String getName() {

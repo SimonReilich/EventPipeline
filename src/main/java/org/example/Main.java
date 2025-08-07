@@ -20,7 +20,7 @@ public class Main {
         queue = new PriorityQueue<>();
         nodes = new ArrayList<>();
 
-        nodes.add(new Group(
+        addNode(new Group(
                 1000,
                 new CombineLatest(
                         new RawInput("A"),
@@ -28,7 +28,7 @@ public class Main {
                                 new RawInput("B")
                         )
                 ),
-                new RawInput("C")
+                new Window('G', 0, 'I', 10, new RawInput("C"))
         ));
 
         System.out.println();
@@ -36,6 +36,7 @@ public class Main {
         try {
             sleep(2000);
             long ts = System.currentTimeMillis() + 1000;
+            onEvent(new Event<>("B", "hi", ts));
             onEvent(new Event<>("A", 3.1415, ts));
             onEvent(new Event<>("C", 1.5, ts));
             onEvent(new Event<>("C", 2.5, ts + 200));
@@ -111,9 +112,15 @@ public class Main {
         nodes.add(node);
     }
 
-    public static void logEvent(Event<?> event) {
+    public static void logEventTriggerd(Event<?> event) {
         long ts = System.currentTimeMillis();
-        System.out.println("[EVENT]: " + event.toString()
+        System.out.println("[TRIGGERD]: " + event.toString()
+                + " (delay of " + (ts - event.getTimestamp()) + "ms)");
+    }
+
+    public static void logEventSupplied(Event<?> event) {
+        long ts = System.currentTimeMillis();
+        System.out.println("[SUPPLIED]: " + event.toString()
                 + " (delay of " + (ts - event.getTimestamp()) + "ms)");
     }
 }
