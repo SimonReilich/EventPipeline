@@ -34,7 +34,7 @@ public class OuterJoin extends Node {
 
     @Override
     public String getOutputSignalName() {
-        return "InnerJoin(" +
+        return "OuterJoin(" +
                 driving.getOutputSignalName() + ", " +
                 Arrays.stream(other).map(Node::getOutputSignalName).collect(Collectors.joining(", ")) +
                 ")[" + this.hashCode() + "]";
