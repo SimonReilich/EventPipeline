@@ -12,10 +12,10 @@ public class Window extends Node {
     public static final Character GROUP = 'G';
     private final Node node;
     private final PriorityQueue<Event<?>> queue;
-    private Character rateMode;
-    private long rate;
-    private Character sizeMode;
-    private long size;
+    private final Character rateMode;
+    private final long rate;
+    private final Character sizeMode;
+    private final long size;
     private long counter;
 
     public Window(Character rateMode, long rate, Character sizeMode, long size, Node node) {

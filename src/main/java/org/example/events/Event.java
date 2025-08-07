@@ -1,7 +1,6 @@
 package org.example.events;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,10 +49,6 @@ public class Event<T> implements Comparable<Event<T>> {
 
     public T getValue(String type) {
         return type.equals(this.type) ? data : null;
-    }
-
-    public List<Map.Entry<String, ?>> toList() {
-        return List.of(Map.entry(this.type, data));
     }
 
     public int compareTo(Event<T> o) {

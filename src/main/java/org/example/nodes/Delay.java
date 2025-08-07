@@ -53,10 +53,10 @@ public class Delay extends Node {
     @Override
     protected Optional<Event<?>> trigger(Event<?> input) {
         if (input.getName().equals("Synthetic" + this.hashCode())) {
-            if (!saved.isEmpty()) {
+            if (!saved.isEmpty() && saved.peek() != null) {
                 Optional<Event<?>> result = Optional.of(new Event<>(
                         getOutputSignalName(),
-                        saved.poll().getData(),
+                        Objects.requireNonNull(saved.poll()).getData(),
                         input.getTimestamp())
                 );
                 result.ifPresent(Main::logEventTriggerd);
