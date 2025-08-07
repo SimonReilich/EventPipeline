@@ -7,27 +7,24 @@ import org.example.nodes.Node;
 import org.example.nodes.Previous;
 import org.example.nodes.Window;
 
-import java.util.Objects;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
 
 import static java.lang.Thread.sleep;
 
 public class Main {
 
     private final static long INPUT_DELAY = 500;
-    private final static long MAX_IDLE = 30_000;
 
-    private static EventQueue queue;
+    private static PriorityQueue<Event<?>> queue;
     private static NodeList nodes;
-    private static ScheduledExecutorService executor;
-    private static int count;
+    private static ExecutorService executor;
 
     public static void main(String[] args) {
 
-        queue = new EventQueue();
+        queue = new PriorityQueue<>();
         nodes = new NodeList();
 
         var window = new Window("A", 1000, 1000, Window.TIME, Window.TIME);
@@ -35,19 +32,13 @@ public class Main {
 
         nodes.add(prev);
         nodes.add(window);
+        executor = Executors.newSingleThreadExecutor();
 
-        count = 0;
-        executor = Executors.newScheduledThreadPool(1);
-        executor.scheduleAtFixedRate(() -> onEvent(new Event<>(
-                "System",
-                null,
-                System.currentTimeMillis())
-        ), 0, INPUT_DELAY, TimeUnit.MILLISECONDS);
         System.out.println();
 
         try {
             sleep(2000);
-            long ts = System.currentTimeMillis();
+            long ts = System.currentTimeMillis() + 1000;
             onEvent(new Event<>("A", 3.1415, ts));
             onEvent(new Event<>("A", "hello", ts + 500));
             onEvent(new Event<>("A", true, ts + 1000));
@@ -58,59 +49,47 @@ public class Main {
         }
     }
 
-    private static void onEvent(Event<?> e) {
-        if (!Objects.equals(e.getName(), "System")) {
-            executor.shutdown();
-            queue.add(e);
-        } else {
-            count++;
-            if (count >= MAX_IDLE / INPUT_DELAY
-                    && queue.stream()
-                    .allMatch(event -> event.getName().equals("System"))
-            ) {
+    private static synchronized void onEvent(Event<?> e) {
+        if (Thread.currentThread().getName().equals("main")) {
+            if (executor != null && !executor.isShutdown()) {
                 executor.shutdown();
-                System.err.println("[ERROR]: System has been terminated, no events arrived after waiting "
-                        + (MAX_IDLE / 1_000f) + "s ...");
-                return;
+                executor = Executors.newSingleThreadExecutor();
             }
+            queue.add(e);
         }
-        while (queue.peek() != null && queue.peek().getTimestamp() + INPUT_DELAY < System.currentTimeMillis()) {
+        while (queue.peek() != null && queue.peek().getTimestamp() + INPUT_DELAY <= System.currentTimeMillis()) {
             assert queue.peek() != null;
             logEvent(queue.peek());
             runPipeline(new EventGroup(queue.poll()));
-            count = 0;
         }
-        if (executor.isShutdown()) {
-            executor = Executors.newScheduledThreadPool(1);
-            executor.scheduleAtFixedRate(() -> onEvent(new Event<>(
-                    "System",
-                    null,
-                    System.currentTimeMillis())
-            ), INPUT_DELAY, INPUT_DELAY, TimeUnit.MILLISECONDS);
+        if (!queue.isEmpty()) {
+            executor.submit(() -> {
+                try {
+                    assert queue.peek() != null;
+                    sleep((queue.peek().getTimestamp() + INPUT_DELAY) - System.currentTimeMillis());
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+                onEvent(new Event<>(
+                        "System",
+                        null,
+                        System.currentTimeMillis())
+                );
+            });
         }
     }
 
     private static void runPipeline(EventGroup events) {
-        for (Node node : nodes) {
-            Optional<? extends AbstractEvent> res = node.give(events);
-            if (res.isPresent()) {
-                for (Event<?> event : res.get().toList()) {
-                    logEvent(event);
-                    events.add(event);
+            for (Node node : nodes) {
+                Optional<? extends AbstractEvent> res = node.give(events);
+                if (res.isPresent()) {
+                    for (Event<?> event : res.get().toList()) {
+                        logEvent(event);
+                        events.add(event);
+                    }
                 }
             }
-        }
-        System.out.println();
-    }
-
-    protected static void notifyExecutor() {
-        executor.shutdownNow();
-        executor = Executors.newScheduledThreadPool(1);
-        executor.scheduleAtFixedRate(() -> onEvent(new Event<>(
-                "System",
-                null,
-                System.currentTimeMillis())
-        ), 0, INPUT_DELAY, TimeUnit.MILLISECONDS);
+            System.out.println();
     }
 
     public static void addEvent(Event<?> event) {
