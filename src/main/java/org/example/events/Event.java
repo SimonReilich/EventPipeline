@@ -5,15 +5,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class Event<T> extends AbstractEvent implements Comparable<Event<T>> {
+public class Event<T> implements Comparable<Event<T>> {
 
     private final String type;
     private final T data;
+    private final long timestamp;
 
     public Event(String type, T data, long timestamp) {
-        super(timestamp);
+        this.timestamp = timestamp;
         this.type = type;
         this.data = data;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 
     public static String dataToString(Object data) {
@@ -39,27 +44,22 @@ public class Event<T> extends AbstractEvent implements Comparable<Event<T>> {
         return this.data;
     }
 
-    @Override
     public Set<String> getAllTypes() {
         return Set.of(this.type);
     }
 
-    @Override
     public T getValue(String type) {
         return type.equals(this.type) ? data : null;
     }
 
-    @Override
     public List<Map.Entry<String, ?>> toList() {
         return List.of(Map.entry(this.type, data));
     }
 
-    @Override
     public int compareTo(Event<T> o) {
         return Long.compare(this.getTimestamp(), o.getTimestamp());
     }
 
-    @Override
     public String toString() {
         return getName() + "; " + dataToString(data) + "; " + getTimestamp();
     }
