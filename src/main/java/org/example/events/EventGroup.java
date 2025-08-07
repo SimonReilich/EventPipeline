@@ -1,72 +1,50 @@
 package org.example.events;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.awt.*;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class EventGroup extends AbstractEvent {
 
-    public final List<AbstractEvent> events;
+    public final Map<String, Object> events;
 
-    public EventGroup(AbstractEvent... events) {
+    public EventGroup(Event<?>... events) {
         super(events[0].getTimestamp());
-        for (AbstractEvent event : events) {
+        this.events = new HashMap<>();
+        for (Event<?> event : events) {
+            this.events.put(event.getName(), event.getData());
             if (event.getTimestamp() > getTimestamp()) {
                 setTimestamp(event.getTimestamp());
             }
-        }
-        for (AbstractEvent event : events) {
-            event.setTimestamp(getTimestamp());
-        }
-
-        this.events = new ArrayList<>(Arrays.asList(events));
-    }
-
-    @Override
-    public void setTimestamp(long timestamp) {
-        super.setTimestamp(timestamp);
-        for (AbstractEvent event : events) {
-            event.setTimestamp(timestamp);
         }
     }
 
     @Override
     public Set<String> getAllTypes() {
-        return events.stream()
-                .flatMap(set -> set.getAllTypes().stream())
-                .collect(Collectors.toSet());
+        return events.keySet();
     }
 
     @Override
     public Object getValue(String type) {
-        return events.stream()
-                .map(e -> e.getValue(type))
-                .filter(s -> !(s == null))
-                .findFirst().get();
+        return events.get(type);
     }
 
     @Override
-    public List<Event<?>> toList() {
-        var list = new ArrayList<Event<?>>();
-        for (AbstractEvent event : events) {
-            list.addAll(event.toList());
-        }
-        return list;
+    public List<Map.Entry<String, ?>> toList() {
+        return new ArrayList<>(events.entrySet());
     }
 
-    @Override
-    public Stream<Event<?>> stream() {
-        return events.stream().flatMap(AbstractEvent::stream);
+    public Stream<Event<?>> eventStream() {
+        return events.entrySet().stream()
+                .map(e -> new Event<>(e.getKey(), e.getValue(), this.getTimestamp()));
     }
 
-    public void add(Event<?> e) {
-        assert this.getTimestamp() == e.getTimestamp();
-        this.events.addFirst(e);
-        if (e.getTimestamp() > getTimestamp()) {
-            setTimestamp(e.getTimestamp());
+    public void merge(AbstractEvent other) {
+        if (other instanceof EventGroup) {
+            this.events.putAll(((EventGroup) other).events);
+        } else if (other instanceof Event) {
+            this.events.put(((Event<?>) other).getName(), ((Event<?>) other).getData());
         }
     }
 }

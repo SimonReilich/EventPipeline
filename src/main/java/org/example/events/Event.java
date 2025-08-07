@@ -2,8 +2,8 @@ package org.example.events;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public class Event<T> extends AbstractEvent implements Comparable<Event<T>> {
 
@@ -16,7 +16,7 @@ public class Event<T> extends AbstractEvent implements Comparable<Event<T>> {
         this.data = data;
     }
 
-    private static String dataToString(Object data) {
+    public static String dataToString(Object data) {
         return switch (data) {
             case Object[] objects ->
                     "[" + String.join(", ", Arrays.stream(objects).map(Event::dataToString).toList()) + "]";
@@ -50,13 +50,8 @@ public class Event<T> extends AbstractEvent implements Comparable<Event<T>> {
     }
 
     @Override
-    public List<Event<?>> toList() {
-        return List.of(this);
-    }
-
-    @Override
-    public Stream<Event<?>> stream() {
-        return Stream.of(this);
+    public List<Map.Entry<String, ?>> toList() {
+        return List.of(Map.entry(this.type, data));
     }
 
     @Override
@@ -67,13 +62,5 @@ public class Event<T> extends AbstractEvent implements Comparable<Event<T>> {
     @Override
     public String toString() {
         return getName() + "; " + dataToString(data) + "; " + getTimestamp();
-    }
-
-    public String toStringPretty() {
-        if (type.contains("[") && type.endsWith("]")) {
-            return type.substring(0, type.lastIndexOf('[')) + "; " + dataToString(data) + "; " + getTimestamp();
-        } else {
-            return toString();
-        }
     }
 }

@@ -27,8 +27,14 @@ public abstract class Node {
 
     private Optional<EventGroup> gives(EventGroup e) {
 
-        var events = e.stream()
-                .map(event -> injected == null ? giveSingle(event) : injected.apply(event))
+        var events = e.eventStream()
+                .map(event -> {
+                    if (injected == null) {
+                        return giveSingle(event);
+                    } else {
+                        return injected.apply(event);
+                    }
+                })
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .toArray(Event<?>[]::new);

@@ -83,10 +83,10 @@ public class Main {
             for (Node node : nodes) {
                 Optional<? extends AbstractEvent> res = node.give(events);
                 if (res.isPresent()) {
-                    for (Event<?> event : res.get().toList()) {
-                        logEvent(event);
-                        events.add(event);
+                    for (var event : res.get().toList()) {
+                        logEvent(events.getTimestamp(), event.getKey(), event.getValue());
                     }
+                    events.merge(res.get());
                 }
             }
             System.out.println();
@@ -104,5 +104,11 @@ public class Main {
         long ts = System.currentTimeMillis();
         System.out.println("[EVENT]: " + event.toString()
                 + " (delay of " + (ts - event.getTimestamp()) + "ms)");
+    }
+
+    private static void logEvent(long timestamp, String type, Object data) {
+        long ts = System.currentTimeMillis();
+        System.out.println("[EVENT]: " + type + "; " + Event.dataToString(data)
+                + " (delay of " + (ts - timestamp) + "ms)");
     }
 }
