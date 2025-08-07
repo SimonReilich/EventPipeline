@@ -7,101 +7,107 @@ import java.util.*;
 
 public class Window extends Node {
 
-    public final static Character TIME = 'T';
-    public final static Character ITEM = 'I';
+    public static final Character ITEM = 'I';
+    public static final Character TIME = 'T';
 
-    protected final String type;
-    protected final long size;
-    protected final long rate;
-    protected final Character sizeMode;
-    protected final Character rateMode;
-    protected final Queue<Event<?>> buffer;
-    protected long countdown;
-    protected boolean first;
-    protected String synthSignalName;
+    private Character rateMode;
+    private long rate;
+    private Character sizeMode;
+    private long size;
+    private final Node node;
+    private final PriorityQueue<Event<?>> queue;
 
-    public Window(String eventType, long size, long rate, Character sizeMode, Character rateMode) {
-        this.type = eventType;
-        this.size = size;
-        this.rate = rate;
-        this.countdown = rate;
+    private long counter;
 
-        assert sizeMode == TIME || sizeMode == ITEM;
-        assert rateMode == TIME || rateMode == ITEM;
+    public Window(Character rateMode, long rate, Character sizeMode, long size, Node node) {
+        super();
 
-        this.sizeMode = sizeMode;
+        assert rateMode == ITEM || rateMode == TIME;
+        assert sizeMode == ITEM || sizeMode == TIME;
+
         this.rateMode = rateMode;
-        this.buffer = new PriorityQueue<>();
-        this.first = true;
-
-        this.synthSignalName = "Synth" + this.hashCode();
+        this.rate = rate;
+        this.sizeMode = sizeMode;
+        this.size = size;
+        this.node = node;
+        this.queue = new PriorityQueue<>();
     }
 
     @Override
-    public Set<String> accepts() {
-        if (sizeMode.equals(ITEM) && rateMode.equals(ITEM)) {
-            return Set.of(type);
-        } else {
-            return Set.of(type, synthSignalName);
+    protected Set<String> accepts() {
+        Set<String> accepts = new HashSet<>();
+        accepts.add("Synthetic" + this.hashCode());
+        accepts.addAll(node.accepts());
+        return accepts;
+    }
+
+    @Override
+    protected List<Node> children() {
+        return List.of(node);
+    }
+
+    @Override
+    public String getOutputSignalName() {
+        return "Window(" + node.getOutputSignalName() + ")[" + this.hashCode() + "]";
+    }
+
+    @Override
+    protected void supply(Event<?> input) {
+        System.out.println("supplied to queue");
+        var result = node.give(input);
+        if (result.isPresent()) {
+            if (queue.isEmpty()) {
+                if (rateMode == TIME) {
+                    Main.addEvent(new Event<>(
+                            "Synthetic" + this.hashCode(),
+                            null,
+                            input.getTimestamp() + this.rate
+                    ));
+                }
+            }
+            queue.add(result.get());
         }
     }
 
     @Override
-    public Set<String> requires() {
-        return Set.of(type);
-    }
+    protected Optional<Event<?>> trigger(Event<?> input) {
+        System.out.println("triggered queue");
+        if (this.accepts().contains(input.getName())) {
+            if (sizeMode == ITEM) {
+                while (queue.size() > size) {
+                    queue.poll();
+                }
+            } else if (sizeMode == TIME) {
+                while (queue.peek() != null && queue.peek().getTimestamp() < input.getTimestamp() - size) {
+                    queue.poll();
+                }
+            }
 
-    @Override
-    public String getOutput() {
-        return "Window(" + type + ")[" + this.hashCode() + "]";
-    }
-
-    public Optional<Event<?>> giveSingle(Event<?> e) {
-        if (Objects.equals(e.getName(), type)) {
-            buffer.add(e);
-            countdown--;
-        }
-
-        if (Objects.equals(sizeMode, TIME)) {
-            buffer.removeIf(event -> event.getTimestamp() + rate < e.getTimestamp());
-        } else if (Objects.equals(sizeMode, ITEM)) {
-            while (buffer.size() > size) {
-                buffer.remove();
+            if (rateMode == ITEM) {
+                counter++;
+                if (counter >= rate) {
+                    counter = 0;
+                    Optional<Event<?>> res = Optional.of(new Event<>(
+                            getOutputSignalName(),
+                            queue.stream().map(Event::getData).toArray(),
+                            input.getTimestamp()
+                    ));
+                    queue.clear();
+                    Main.logEvent(res.get());
+                    return res;
+                }
+            } else if (rateMode == TIME && input.getName().equals("Synthetic" + this.hashCode())) {
+                Optional<Event<?>> res = Optional.of(new Event<>(
+                        getOutputSignalName(),
+                        queue.toArray(),
+                        input.getTimestamp()
+                ));
+                queue.clear();
+                Main.logEvent(res.get());
+                return res;
             }
         }
 
-        var output = new Event<?>[0];
-
-        if (Objects.equals(rateMode, TIME) && e.getName().equals(type) && first) {
-            first = false;
-            Main.addEvent(new Event<>(
-                    synthSignalName,
-                    null,
-                    (((int) (e.getTimestamp() / rate)) * rate) + rate)
-            );
-        } else if (Objects.equals(rateMode, TIME) && e.getName().equals(synthSignalName)) {
-            if (!buffer.isEmpty()) {
-                Main.addEvent(new Event<>(synthSignalName, null, e.getTimestamp() + rate));
-                output = buffer.toArray(Event<?>[]::new);
-            } else {
-                first = true;
-            }
-            buffer.clear();
-        } else if (Objects.equals(rateMode, ITEM) && countdown <= 0) {
-            countdown = rate;
-            output = buffer.toArray(Event<?>[]::new);
-            buffer.clear();
-        }
-
-        if (output.length > 0) {
-            return Optional.of(new Event<>(getOutput(),
-                    Arrays.stream(output).map(Event::getData).toArray(),
-                    e.getTimestamp()));
-        }
         return Optional.empty();
-    }
-
-    public Window copy() {
-        return new Window(type, size, rate, sizeMode, rateMode);
     }
 }

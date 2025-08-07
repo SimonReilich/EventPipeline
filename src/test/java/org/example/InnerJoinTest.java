@@ -1,7 +1,7 @@
 package org.example;
 
 import org.example.events.Event;
-import org.example.nodes.InnerJoin;
+import org.example.nodesOld.InnerJoin;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

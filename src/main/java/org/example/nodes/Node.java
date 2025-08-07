@@ -1,56 +1,48 @@
 package org.example.nodes;
 
-import org.example.events.AbstractEvent;
 import org.example.events.Event;
-import org.example.events.EventGroup;
 
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class Node {
 
-    protected Function<Event<?>, Optional<Event<?>>> injected;
+    // dependencies of the node + synthetic signals
+    protected abstract Set<String> accepts();
 
-    public abstract Set<String> accepts();
+    protected abstract List<Node> children();
 
-    public abstract Set<String> requires();
+    public abstract String getOutputSignalName();
 
-    public final Optional<? extends AbstractEvent> give(AbstractEvent e) {
-        if (e instanceof Event<?>) {
-            return injected == null ? this.giveSingle((Event<?>) e) : injected.apply((Event<?>) e);
-        } else if (e instanceof EventGroup) {
-            return this.gives((EventGroup) e);
-        }
-        return Optional.empty();
-    }
+    protected abstract void supply(Event<?> input);
 
-    private Optional<EventGroup> gives(EventGroup e) {
+    protected abstract Optional<Event<?>> trigger(Event<?> input);
 
-        var events = e.eventStream()
-                .map(event -> {
-                    if (injected == null) {
-                        return giveSingle(event);
-                    } else {
-                        return injected.apply(event);
-                    }
-                })
+    public Optional<Event<Map<String, ?>>> giveGroup(Event<Map<String, ?>> input) {
+        var results = input.getData().entrySet().stream()
+                .map(e -> give(new Event<>(
+                        e.getKey(),
+                        e.getValue(),
+                        input.getTimestamp()
+                )))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .toArray(Event<?>[]::new);
+                .collect(Collectors.toMap(Event::getName, Event::getData));
+        if (results.isEmpty()) return Optional.empty();
 
-        if (events.length == 0) {
-            return Optional.empty();
-        } else {
-            return Optional.of(new EventGroup(events));
-        }
+        return Optional.of(new Event<>(
+                "Group",
+                results,
+                input.getTimestamp()
+        ));
     }
 
-    protected abstract Optional<Event<?>> giveSingle(Event<?> e);
-
-    public abstract String getOutput();
-
-    protected void inject(Function<Event<?>, Optional<Event<?>>> giveSingle) {
-        this.injected = giveSingle;
+    public Optional<Event<?>> give(Event<?> input) {
+        if (accepts().contains(input.getName())) {
+            supply(input);
+            return trigger(input);
+        } else {
+            return Optional.empty();
+        }
     }
 }

@@ -1,51 +1,56 @@
 package org.example.nodes;
 
+import org.example.Main;
 import org.example.events.Event;
 
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public class Previous extends Node {
 
-    private final String type;
-    protected Event<?> state;
-    protected Event<?> lastElem;
+    private final Node node;
+    private Event<?> saved;
+    private Event<?> current;
 
-    public Previous(String type) {
-        this.type = type;
+    public Previous(Node node) {
+        super();
+        this.node = node;
     }
 
     @Override
-    public Set<String> accepts() {
-        return Set.of(type);
+    protected Set<String> accepts() {
+        return new HashSet<>(node.accepts());
     }
 
     @Override
-    public Set<String> requires() {
-        return accepts();
+    protected List<Node> children() {
+        return List.of(node);
     }
 
     @Override
-    public Optional<Event<?>> giveSingle(Event<?> e) {
-        if (e.getName().equals(this.type)) {
-
-            Optional<Event<?>> result = (state == null) ? Optional.empty() : Optional.of(new Event<>(
-                    getOutput(),
-                    state.getValue(type),
-                    e.getTimestamp()
-            ));
-            state = e;
-            return result;
-        }
-        return Optional.empty();
+    public String getOutputSignalName() {
+        return "Previous(" + node.getOutputSignalName() + ")[" + this.hashCode() + "]";
     }
 
     @Override
-    public String getOutput() {
-        return "Previous(" + type + ")[" + this.hashCode() + "]";
+    protected void supply(Event<?> input) {
+        var res = node.give(input);
+        res.ifPresent(event -> current = event);
     }
 
-    protected Previous copy() {
-        return new Previous(type);
+    @Override
+    protected Optional<Event<?>> trigger(Event<?> input) {
+        var temp = saved;
+        saved = current;
+        current = null;
+            if (temp != null) {
+                Optional<Event<?>> result = Optional.of(new Event<>(
+                        getOutputSignalName(),
+                        temp.getData(),
+                        input.getTimestamp())
+                );
+                result.ifPresent(Main::logEvent);
+                return result;
+            }
+            return Optional.empty();
     }
 }

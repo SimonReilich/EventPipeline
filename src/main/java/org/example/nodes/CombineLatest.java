@@ -1,51 +1,58 @@
 package org.example.nodes;
 
+import org.example.Main;
 import org.example.events.Event;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CombineLatest extends Node {
 
-    protected final Map<String, Event<?>> state;
-    protected final Set<String> types;
+    private final Node[] children;
 
-    public CombineLatest(String... types) {
-        state = new HashMap<>();
-        this.types = new HashSet<>();
-        this.types.addAll(Arrays.asList(types));
+    public CombineLatest(Node... children) {
+        this.children = children;
+        this.values = new HashMap<>();
     }
 
     @Override
-    public Set<String> accepts() {
-        return types;
+    protected Set<String> accepts() {
+        return children().stream().map(Node::getOutputSignalName).collect(Collectors.toSet());
     }
 
     @Override
-    public Set<String> requires() {
-        return accepts();
+    protected List<Node> children() {
+        return Arrays.stream(children).toList();
     }
 
-    public Optional<Event<?>> giveSingle(Event<?> e) {
-        if (accepts().contains(e.getName())) {
-            state.put(e.getName(), e);
-            return Optional.of(new Event<>(
-                    getOutput(),
-                    types.stream().map(key -> {
-                        if (state.containsKey(key)) {
-                            return state.get(key).getData();
-                        } else {
-                            return "_";
-                        }
-                    }).toArray(),
-                    e.getTimestamp()
-            ));
-        }
-        return Optional.empty();
+    @Override
+    public String getOutputSignalName() {
+        return "CombineLatest(" +
+                Arrays.stream(children).map(Node::getOutputSignalName).collect(Collectors.joining(", ")) +
+                ")[" + this.hashCode() + "]";
     }
 
-    public String getOutput() {
-        return "CombineLatest("
-                + String.join(", ", types)
-                + ")[" + this.hashCode() + "]";
+    private final Map<String, Object> values;
+
+    @Override
+    protected void supply(Event<?> input) {
+        Arrays.stream(children)
+                .map(c -> c.give(input))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .forEach(e -> values.put(e.getName(), e.getData()));
+    }
+
+    @Override
+    protected Optional<Event<?>> trigger(Event<?> input) {
+        Optional<Event<?>> result = Optional.of(
+                new Event<>(
+                        getOutputSignalName(),
+                        values.entrySet().toArray(),
+                        input.getTimestamp()
+                )
+        );
+        result.ifPresent(Main::logEvent);
+        return result;
     }
 }

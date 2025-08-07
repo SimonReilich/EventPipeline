@@ -1,56 +1,78 @@
 package org.example.nodes;
 
+import org.example.Main;
 import org.example.events.Event;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class OuterJoin extends Node {
 
-    protected final String driving;
-    protected final Set<String> types;
-    protected final Map<String, Event<?>> state;
+    private final Node driving;
+    private final Node[] other;
 
-    public OuterJoin(String driving, String... types) {
+    public OuterJoin(Node driving, Node... other) {
         this.driving = driving;
-        this.types = new HashSet<>();
-        this.types.add(driving);
-        this.types.addAll(Arrays.asList(types));
-        this.state = new HashMap<>();
+        this.other = other;
+        this.values = new HashMap<>();
     }
 
     @Override
-    public Set<String> accepts() {
-        return types;
+    protected Set<String> accepts() {
+        var accepts = new HashSet<>(driving.accepts());
+        Arrays.stream(other).forEach(node -> accepts.addAll(node.accepts()));
+        return accepts;
     }
 
     @Override
-    public Set<String> requires() {
-        return accepts();
+    protected List<Node> children() {
+        List<Node> children = new ArrayList<>();
+        children.add(driving);
+        children.addAll(Arrays.asList(other));
+        return children;
     }
 
     @Override
-    public String getOutput() {
-        return "OuterJoin(" + driving + ", "
-                + String.join(", ", types.stream().filter(s -> !s.equals(driving)).toList())
-                + ")[" + this.hashCode() + "]";
+    public String getOutputSignalName() {
+        return "InnerJoin(" +
+                driving.getOutputSignalName() + ", " +
+                Arrays.stream(other).map(Node::getOutputSignalName).collect(Collectors.joining(", ")) +
+                ")[" + this.hashCode() + "]";
     }
 
-    public Optional<Event<?>> giveSingle(Event<?> e) {
-        if (types.contains(e.getName())) {
-            state.put(e.getName(), e);
-            int size = state.size();
-            var output = state.values().toArray(Event[]::new);
-            if (e.getName().equals(driving)) {
-                state.clear();
-            }
-            if (size == types.size() && output.length > 0) {
-                return Optional.of(new Event<>(
-                        getOutput(),
-                        Arrays.stream(output).map(Event::getData).toArray(),
-                        e.getTimestamp()
-                ));
-            }
+    private final Map<String, Object> values;
+
+    @Override
+    protected void supply(Event<?> input) {
+        Arrays.stream(other)
+                .filter(node -> node.accepts().contains(input.getName()))
+                .forEach(node -> node.supply(input));
+
+        if (driving.accepts().contains(input.getName())) {
+            driving.supply(input);
         }
-        return Optional.empty();
+    }
+
+    @Override
+    protected Optional<Event<?>> trigger(Event<?> input) {
+        values.putAll(Arrays.stream(other)
+                .map(n -> n.trigger(input))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toMap(Event::getName, Event::getData)));
+
+        var outputDriving = driving.trigger(input);
+        outputDriving.ifPresent(d -> {
+            values.clear();
+            values.put(d.getName(), d.getData());
+        });
+
+        Optional<Event<?>> result = Optional.of(new Event<>(
+                getOutputSignalName(),
+                values.entrySet().toArray(),
+                input.getTimestamp()
+        ));
+        result.ifPresent(Main::logEvent);
+        return result;
     }
 }

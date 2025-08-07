@@ -1,7 +1,7 @@
 package org.example;
 
 import org.example.events.Event;
-import org.example.nodes.Previous;
+import org.example.nodesOld.Previous;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

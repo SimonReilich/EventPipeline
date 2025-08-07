@@ -1,7 +1,7 @@
 package org.example;
 
 import org.example.events.Event;
-import org.example.nodes.CombineLatest;
+import org.example.nodesOld.CombineLatest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
