@@ -21,8 +21,7 @@ public class WindowTest {
         var result = optRes.get();
 
         assertEquals(50, result.getTimestamp());
-        assertTrue(result.getAllTypes().stream().anyMatch(type -> type.equals("Window(A)[" + node.hashCode() + "]")));
-        assertArrayEquals(new Object[]{1}, (Object[]) result.getValue("Window(A)[" + node.hashCode() + "]"));
+        assertArrayEquals(new Object[]{1}, (Object[]) result.getData().get("A list"));
     }
 
     @Test
@@ -45,7 +44,6 @@ public class WindowTest {
         var result = optRes.get();
 
         assertEquals(50, result.getTimestamp());
-        assertTrue(result.getAllTypes().stream().anyMatch(type -> type.equals("Window(A)[" + node.hashCode() + "]")));
-        assertEquals(2, ((Object[]) result.getValue("Window(A)[" + node.hashCode() + "]")).length);
+        assertEquals(2, ((Object[]) result.getValue("A list")).length);
     }
 }

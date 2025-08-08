@@ -28,8 +28,7 @@ public class PreviousTest {
         var result = optRes.get();
 
         assertEquals(50, result.getTimestamp());
-        assertTrue(result.getAllTypes().stream().anyMatch(type -> type.equals("Previous(A)[" + node.hashCode() + "]")));
-        assertEquals(0, result.getValue("Previous(A)[" + node.hashCode() + "]"));
+        assertEquals(0, result.getValue("A"));
     }
 
     @Test

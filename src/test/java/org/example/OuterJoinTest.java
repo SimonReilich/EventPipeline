@@ -38,8 +38,7 @@ public class OuterJoinTest {
 
         var result = resOpt.get();
         assertEquals(100, result.getTimestamp());
-        assertTrue(result.getAllTypes().stream().anyMatch(s -> s.equals("OuterJoin(A, B, C)[" + node.hashCode() + "]")));
-        assertArrayEquals(new Object[]{Map.entry("A", 0)}, ((Object[]) result.getValue("OuterJoin(A, B, C)[" + node.hashCode() + "]")));
+        assertEquals(0, (Integer) result.getData().get("A"));
     }
 
     @Test

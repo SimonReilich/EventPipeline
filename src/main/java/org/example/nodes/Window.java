@@ -66,8 +66,6 @@ public class Window extends Node {
                     ));
                 }
             }
-            result.get().getDataSet()
-                    .forEach(e -> queue.removeIf(entry -> Objects.equals(entry.getKey(), e.getKey())));
             queue.addAll(result.get().getDataSet().stream()
                     .map(e -> Map.entry(e.getKey(), Map.entry(e.getValue(), input.getTimestamp())))
                     .collect(Collectors.toSet()));
@@ -92,7 +90,8 @@ public class Window extends Node {
                 if (counter >= rate) {
                     counter = 0;
                     Optional<Event<Object>> res = Optional.of(new Event<>(
-                            queue.stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getKey())),
+                            queue.getFirst().getKey() + " list",
+                            queue.stream().map(e -> e.getValue().getKey()).toArray(),
                             input.getTimestamp()
                     ));
                     queue.clear();
@@ -101,8 +100,8 @@ public class Window extends Node {
                 }
             } else if (rateMode == TIME && input.getTypes().contains("Synthetic" + this.hashCode())) {
                 Optional<Event<Object>> res = Optional.of(new Event<>(
-                        queue.stream()
-                                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getKey())),
+                        queue.getFirst().getKey() + " list",
+                        queue.stream().map(e -> e.getValue().getKey()).toArray(),
                         input.getTimestamp()
                 ));
                 queue.clear();
@@ -110,8 +109,8 @@ public class Window extends Node {
                 return res;
             } else if (rateMode == GROUP && input.getTypes().contains("SyntheticG" + this.hashCode())) {
                 Optional<Event<Object>> res = Optional.of(new Event<>(
-                        queue.stream()
-                                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getKey())),
+                        queue.getFirst().getKey() + " list",
+                        queue.stream().map(e -> e.getValue().getKey()).toArray(),
                         input.getTimestamp()
                 ));
                 queue.clear();

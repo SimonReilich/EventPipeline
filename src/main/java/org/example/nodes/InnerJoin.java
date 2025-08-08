@@ -56,7 +56,8 @@ public class InnerJoin extends Node {
     protected Optional<Event<Object>> trigger(Event<Object> input) {
         values.putAll(Arrays.stream(other)
                 .flatMap(n -> n.trigger(input).orElse(new Event<>("", Map.of(), 0)).getData().entrySet().stream())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+                .peek(e -> values.remove(e.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2)));
 
         var outputDriving = driving.trigger(input);
         outputDriving.ifPresent(d -> {

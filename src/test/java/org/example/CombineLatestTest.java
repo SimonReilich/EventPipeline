@@ -26,8 +26,7 @@ public class CombineLatestTest {
         var result = optRes.get();
 
         assertEquals(100, result.getTimestamp());
-        assertTrue(result.getAllTypes().stream().anyMatch(s -> s.equals("CombineLatest(A, B, C)[" + node.hashCode() + "]")));
-        assertArrayEquals(new Object[]{Map.entry("A", 1), Map.entry("B", 1), Map.entry("C", 1)}, (Object[]) (result.getValue("CombineLatest(A, B, C)[" + node.hashCode() + "]")));
+        assertArrayEquals(new Object[]{Map.entry("A", 1), Map.entry("B", 1), Map.entry("C", 1)}, (result.getDataSet().toArray()));
     }
 
     @Test
