@@ -37,7 +37,10 @@ public class EventPipeline {
         thread = new Thread(() -> {
             try {
                 assert queue.peek() != null;
-                sleep((queue.peek().timestamp() + INPUT_DELAY) - System.currentTimeMillis());
+                var sleepTime = (queue.peek().timestamp() + INPUT_DELAY) - System.currentTimeMillis();
+                if (sleepTime > 0) {
+                    sleep(sleepTime);
+                }
             } catch (InterruptedException ex) {
                 throw new RuntimeException(ex);
             }
