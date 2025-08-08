@@ -9,7 +9,7 @@ public class Delay extends Node {
 
     private final long delay;
     private final Node node;
-    private final Queue<Event<?>> saved;
+    private final Queue<Event<Object>> saved;
 
     public Delay(long delay, Node node) {
         super();
@@ -27,18 +27,18 @@ public class Delay extends Node {
     }
 
     @Override
+    public Set<String> requires() {
+        return node.requires();
+    }
+
+    @Override
     protected List<Node> children() {
         return List.of(node);
     }
 
     @Override
-    public String getOutputSignalName() {
-        return "Delay(" + node.getOutputSignalName() + ")[" + this.hashCode() + "]";
-    }
-
-    @Override
-    protected void supply(Event<?> input) {
-        Main.logEventSupplied(input);
+    protected void supply(Event<Object> input) {
+        Main.logEventSupplied(input, "Delay");
         var res = node.give(input);
         if (res.isPresent()) {
             saved.add(res.get());
@@ -51,15 +51,14 @@ public class Delay extends Node {
     }
 
     @Override
-    protected Optional<Event<?>> trigger(Event<?> input) {
-        if (input.getName().equals("Synthetic" + this.hashCode())) {
+    protected Optional<Event<Object>> trigger(Event<Object> input) {
+        if (input.getTypes().contains("Synthetic" + this.hashCode())) {
             if (!saved.isEmpty() && saved.peek() != null) {
-                Optional<Event<?>> result = Optional.of(new Event<>(
-                        getOutputSignalName(),
+                Optional<Event<Object>> result = Optional.of(new Event<>(
                         Objects.requireNonNull(saved.poll()).getData(),
                         input.getTimestamp())
                 );
-                result.ifPresent(Main::logEventTriggerd);
+                result.ifPresent(r -> Main.logEventTriggerd(r, "Delay"));
                 return result;
             }
         }

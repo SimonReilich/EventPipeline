@@ -3,47 +3,37 @@ package org.example.nodes;
 import org.example.events.Event;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public abstract class Node {
 
     // dependencies of the node + synthetic signals
     public abstract Set<String> accepts();
 
-    protected abstract List<Node> children();
+    // dependencies of the node
+    public abstract Set<String> requires();
 
-    public abstract String getOutputSignalName();
-
-    protected abstract void supply(Event<?> input);
-
-    protected abstract Optional<Event<?>> trigger(Event<?> input);
-
-    public Optional<Event<Map<String, ?>>> giveGroup(Event<Map<String, ?>> input) {
-        var results = input.getData().entrySet().stream()
-                .map(e -> give(new Event<>(
-                        e.getKey(),
-                        e.getValue(),
-                        input.getTimestamp()
-                )))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toMap(Event::getName, Event::getData));
-        if (results.isEmpty()) return Optional.empty();
-
-        return Optional.of(new Event<>(
-                "Group",
-                results,
-                input.getTimestamp()
-        ));
+    public boolean acceptsAny(Set<String> input) {
+        for (var type: input) {
+            if (accepts().contains(type)) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public Optional<Event<?>> give(Event<?> input) {
-        if (accepts().contains(input.getName())) {
-            supply(input);
-            return trigger(input);
+    protected abstract List<Node> children();
+
+    protected abstract void supply(Event<Object> input);
+
+    protected abstract Optional<Event<Object>> trigger(Event<Object> input);
+
+    public Optional<Event<Object>> give(Event<Object> input) {
+        var filtered = input.filter(accepts());
+        if (!filtered.getDataSet().isEmpty()) {
+            supply(filtered);
+            return trigger(filtered);
         } else {
             return Optional.empty();
         }

@@ -11,8 +11,8 @@ import java.util.Set;
 public class Previous extends Node {
 
     private final Node node;
-    private Event<?> saved;
-    private Event<?> current;
+    private Event<Object> saved;
+    private Event<Object> current;
 
     public Previous(Node node) {
         super();
@@ -25,34 +25,33 @@ public class Previous extends Node {
     }
 
     @Override
+    public Set<String> requires() {
+        return new HashSet<>(node.requires());
+    }
+
+    @Override
     protected List<Node> children() {
         return List.of(node);
     }
 
     @Override
-    public String getOutputSignalName() {
-        return "Previous(" + node.getOutputSignalName() + ")[" + this.hashCode() + "]";
-    }
-
-    @Override
-    protected void supply(Event<?> input) {
-        Main.logEventSupplied(input);
+    protected void supply(Event<Object> input) {
+        Main.logEventSupplied(input, "Previous");
         var res = node.give(input);
         res.ifPresent(event -> current = event);
     }
 
     @Override
-    protected Optional<Event<?>> trigger(Event<?> input) {
+    protected Optional<Event<Object>> trigger(Event<Object> input) {
         var temp = saved;
         saved = current;
         current = null;
         if (temp != null) {
-            Optional<Event<?>> result = Optional.of(new Event<>(
-                    getOutputSignalName(),
+            Optional<Event<Object>> result = Optional.of(new Event<>(
                     temp.getData(),
                     input.getTimestamp())
             );
-            result.ifPresent(Main::logEventTriggerd);
+            result.ifPresent(r -> Main.logEventTriggerd(r, "Previous"));
             return result;
         }
         return Optional.empty();

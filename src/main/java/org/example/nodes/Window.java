@@ -4,6 +4,7 @@ import org.example.Main;
 import org.example.events.Event;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Window extends Node {
 
@@ -11,7 +12,7 @@ public class Window extends Node {
     public static final Character TIME = 'T';
     public static final Character GROUP = 'G';
     private final Node node;
-    private final PriorityQueue<Event<?>> queue;
+    private final List<Map.Entry<String, Map.Entry<Object, Long>>> queue;
     private final Character rateMode;
     private final long rate;
     private final Character sizeMode;
@@ -29,7 +30,7 @@ public class Window extends Node {
         this.sizeMode = sizeMode;
         this.size = size;
         this.node = node;
-        this.queue = new PriorityQueue<>();
+        this.queue = new LinkedList<>();
     }
 
     @Override
@@ -42,18 +43,18 @@ public class Window extends Node {
     }
 
     @Override
+    public Set<String> requires() {
+        return node.requires();
+    }
+
+    @Override
     protected List<Node> children() {
         return List.of(node);
     }
 
     @Override
-    public String getOutputSignalName() {
-        return "Window(" + node.getOutputSignalName() + ")[" + this.hashCode() + "]";
-    }
-
-    @Override
-    protected void supply(Event<?> input) {
-        Main.logEventSupplied(input);
+    protected void supply(Event<Object> input) {
+        Main.logEventSupplied(input, "Window");
         var result = node.give(input);
         if (result.isPresent()) {
             if (queue.isEmpty()) {
@@ -65,20 +66,24 @@ public class Window extends Node {
                     ));
                 }
             }
-            queue.add(result.get());
+            result.get().getDataSet()
+                    .forEach(e -> queue.removeIf(entry -> Objects.equals(entry.getKey(), e.getKey())));
+            queue.addAll(result.get().getDataSet().stream()
+                    .map(e -> Map.entry(e.getKey(), Map.entry(e.getValue(), input.getTimestamp())))
+                    .collect(Collectors.toSet()));
         }
     }
 
     @Override
-    protected Optional<Event<?>> trigger(Event<?> input) {
-        if (this.accepts().contains(input.getName())) {
+    protected Optional<Event<Object>> trigger(Event<Object> input) {
+        if (this.acceptsAny(input.getTypes())) {
             if (sizeMode == ITEM) {
                 while (queue.size() > size) {
-                    queue.poll();
+                    queue.removeFirst();
                 }
             } else if (sizeMode == TIME) {
-                while (queue.peek() != null && queue.peek().getTimestamp() < input.getTimestamp() - size) {
-                    queue.poll();
+                while (queue.getFirst() != null && queue.getFirst().getValue().getValue() < input.getTimestamp() - size) {
+                    queue.removeFirst();
                 }
             }
 
@@ -86,32 +91,31 @@ public class Window extends Node {
                 counter++;
                 if (counter >= rate) {
                     counter = 0;
-                    Optional<Event<?>> res = Optional.of(new Event<>(
-                            getOutputSignalName(),
-                            queue.stream().map(Event::getData).toArray(),
+                    Optional<Event<Object>> res = Optional.of(new Event<>(
+                            queue.stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getKey())),
                             input.getTimestamp()
                     ));
                     queue.clear();
-                    Main.logEventTriggerd(res.get());
+                    Main.logEventTriggerd(res.get(), "Window");
                     return res;
                 }
-            } else if (rateMode == TIME && input.getName().equals("Synthetic" + this.hashCode())) {
-                Optional<Event<?>> res = Optional.of(new Event<>(
-                        getOutputSignalName(),
-                        queue.stream().map(Event::getData).toArray(),
+            } else if (rateMode == TIME && input.getTypes().contains("Synthetic" + this.hashCode())) {
+                Optional<Event<Object>> res = Optional.of(new Event<>(
+                        queue.stream()
+                                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getKey())),
                         input.getTimestamp()
                 ));
                 queue.clear();
-                Main.logEventTriggerd(res.get());
+                Main.logEventTriggerd(res.get(), "Window");
                 return res;
-            } else if (rateMode == GROUP && input.getName().equals("SyntheticG" + this.hashCode())) {
-                Optional<Event<?>> res = Optional.of(new Event<>(
-                        getOutputSignalName(),
-                        queue.stream().map(Event::getData).toArray(),
+            } else if (rateMode == GROUP && input.getTypes().contains("SyntheticG" + this.hashCode())) {
+                Optional<Event<Object>> res = Optional.of(new Event<>(
+                        queue.stream()
+                                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getKey())),
                         input.getTimestamp()
                 ));
                 queue.clear();
-                Main.logEventTriggerd(res.get());
+                Main.logEventTriggerd(res.get(), "Window");
                 return res;
             }
         }

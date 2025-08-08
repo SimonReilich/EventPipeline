@@ -26,6 +26,13 @@ public class OuterJoin extends Node {
     }
 
     @Override
+    public Set<String> requires() {
+        var requires = new HashSet<>(driving.requires());
+        Arrays.stream(other).forEach(node -> requires.addAll(node.requires()));
+        return requires;
+    }
+
+    @Override
     protected List<Node> children() {
         List<Node> children = new ArrayList<>();
         children.add(driving);
@@ -34,45 +41,34 @@ public class OuterJoin extends Node {
     }
 
     @Override
-    public String getOutputSignalName() {
-        return "OuterJoin(" +
-                driving.getOutputSignalName() + ", " +
-                Arrays.stream(other).map(Node::getOutputSignalName).collect(Collectors.joining(", ")) +
-                ")[" + this.hashCode() + "]";
-    }
-
-    @Override
-    protected void supply(Event<?> input) {
-        Main.logEventSupplied(input);
+    protected void supply(Event<Object> input) {
+        Main.logEventSupplied(input, "OuterJoin");
         Arrays.stream(other)
-                .filter(node -> node.accepts().contains(input.getName()))
-                .forEach(node -> node.supply(input));
+                .filter(node -> node.acceptsAny(input.getTypes()))
+                .forEach(node -> node.supply(input.filter(node.accepts())));
 
-        if (driving.accepts().contains(input.getName())) {
-            driving.supply(input);
+        if (driving.acceptsAny(input.getTypes())) {
+            driving.supply(input.filter(driving.accepts()));
         }
     }
 
     @Override
-    protected Optional<Event<?>> trigger(Event<?> input) {
+    protected Optional<Event<Object>> trigger(Event<Object> input) {
         values.putAll(Arrays.stream(other)
-                .map(n -> n.trigger(input))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toMap(Event::getName, Event::getData)));
+                .flatMap(n -> n.trigger(input).orElse(new Event<>("", Map.of(), 0)).getData().entrySet().stream())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
         var outputDriving = driving.trigger(input);
         outputDriving.ifPresent(d -> {
             values.clear();
-            values.put(d.getName(), d.getData());
+            values.putAll(d.getData());
         });
 
-        Optional<Event<?>> result = Optional.of(new Event<>(
-                getOutputSignalName(),
-                values.entrySet().toArray(),
+        Optional<Event<Object>> result = Optional.of(new Event<>(
+                values.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)),
                 input.getTimestamp()
         ));
-        result.ifPresent(Main::logEventTriggerd);
+        result.ifPresent(r -> Main.logEventSupplied(r, "OuterJoin"));
         return result;
     }
 

@@ -22,37 +22,35 @@ public class CombineLatest extends Node {
     }
 
     @Override
+    public Set<String> requires() {
+        return children().stream().flatMap(n -> n.requires().stream()).collect(Collectors.toSet());
+    }
+
+    @Override
     protected List<Node> children() {
         return Arrays.stream(children).toList();
     }
 
     @Override
-    public String getOutputSignalName() {
-        return "CombineLatest(" +
-                Arrays.stream(children).map(Node::getOutputSignalName).collect(Collectors.joining(", ")) +
-                ")[" + this.hashCode() + "]";
-    }
-
-    @Override
-    protected void supply(Event<?> input) {
-        Main.logEventSupplied(input);
+    protected void supply(Event<Object> input) {
+        Main.logEventSupplied(input, "CombineLatest");
         Arrays.stream(children)
                 .map(c -> c.give(input))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .forEach(e -> values.put(e.getName(), e.getData()));
+                .forEach(e -> values.putAll(e.getDataSet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
     }
 
     @Override
-    protected Optional<Event<?>> trigger(Event<?> input) {
-        Optional<Event<?>> result = Optional.of(
+    protected Optional<Event<Object>> trigger(Event<Object> input) {
+        Optional<Event<Object>> result = Optional.of(
                 new Event<>(
-                        getOutputSignalName(),
-                        values.entrySet().toArray(),
+                        values,
                         input.getTimestamp()
                 )
         );
-        result.ifPresent(Main::logEventTriggerd);
+        result.ifPresent(r -> Main.logEventTriggerd(r, "CombineLatest"));
         return result;
     }
 
