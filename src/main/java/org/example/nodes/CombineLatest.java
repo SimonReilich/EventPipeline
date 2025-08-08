@@ -32,26 +32,29 @@ public class CombineLatest extends Node {
     }
 
     @Override
-    protected void supply(Event<Object> input) {
-        Main.logEventSupplied(input, "CombineLatest");
-        Arrays.stream(children)
+    protected List<Timer> supply(Event<Object> input) {
+        Main.logEventSupplied(input);
+        return Arrays.stream(children)
                 .map(c -> c.give(input))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .forEach(e -> values.putAll(e.getDataSet().stream()
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
+                .filter(r -> r.event().isPresent())
+                .map(Response::save)
+                .peek(r -> {
+                    values.putAll(r.event().getDataSet().stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+                }).flatMap(r -> r.timers().stream()).toList();
     }
 
     @Override
-    protected Optional<Event<Object>> trigger(Event<Object> input) {
+    protected Response trigger(Event<Object> input) {
         Optional<Event<Object>> result = Optional.of(
                 new Event<>(
+                        "cl",
                         values,
                         input.timestamp()
                 )
         );
-        result.ifPresent(r -> Main.logEventTriggerd(r, "CombineLatest"));
-        return result;
+        result.ifPresent(Main::logEventTriggerd);
+        return new Response(result, List.of());
     }
 
 }

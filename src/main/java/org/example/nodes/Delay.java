@@ -9,7 +9,7 @@ public class Delay extends Node {
 
     private final long delay;
     private final Node node;
-    private final Queue<Event<Object>> saved;
+    private final Queue<Response> saved;
 
     public Delay(long delay, Node node) {
         super();
@@ -37,32 +37,25 @@ public class Delay extends Node {
     }
 
     @Override
-    protected void supply(Event<Object> input) {
-        Main.logEventSupplied(input, "Delay");
-        var res = node.give(input);
-        if (res.isPresent()) {
-            saved.add(res.get());
-            Main.addEvent(new Event<>(
-                    "Synthetic" + this.hashCode(),
-                    null,
-                    input.timestamp() + this.delay
-            ));
-        }
+    protected List<Timer> supply(Event<Object> input) {
+        Main.logEventSupplied(input);
+        saved.add(node.give(input));
+        return List.of(new Timer(input.timestamp() + this.delay, this.hashCode()));
     }
 
     @Override
-    protected Optional<Event<Object>> trigger(Event<Object> input) {
+    protected Response trigger(Event<Object> input) {
         if (input.getTypes().contains("Synthetic" + this.hashCode())) {
-            if (!saved.isEmpty() && saved.peek() != null) {
+            if (!saved.isEmpty() && saved.peek() != null && saved.peek().event().isPresent()) {
                 Optional<Event<Object>> result = Optional.of(new Event<>(
-                        Objects.requireNonNull(saved.poll()).data(),
+                        "del",
+                        Objects.requireNonNull(saved.poll()).event().get().data(),
                         input.timestamp())
                 );
-                result.ifPresent(r -> Main.logEventTriggerd(r, "Delay"));
-                return result;
+                result.ifPresent(Main::logEventTriggerd);
+                return new Response(result, List.of());
             }
         }
-        return Optional.empty();
+        return Response.empty();
     }
-
 }

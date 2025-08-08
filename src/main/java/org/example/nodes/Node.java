@@ -2,6 +2,7 @@ package org.example.nodes;
 
 import org.example.events.Event;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -25,18 +26,69 @@ public abstract class Node {
 
     protected abstract List<Node> children();
 
-    protected abstract void supply(Event<Object> input);
+    protected abstract List<Timer> supply(Event<Object> input);
 
-    protected abstract Optional<Event<Object>> trigger(Event<Object> input);
+    protected abstract Response trigger(Event<Object> input);
 
-    public Optional<Event<Object>> give(Event<Object> input) {
+    public Response give(Event<Object> input) {
         var filtered = input.filter(accepts());
         if (!filtered.getDataSet().isEmpty()) {
-            supply(filtered);
-            return trigger(filtered);
+            var resp = new Response(Optional.empty(), supply(filtered));
+            return trigger(filtered).merge(resp);
         } else {
-            return Optional.empty();
+            return Response.empty();
         }
     }
 
+    public record Timer(Long timestamp, int target) {}
+
+    public record Response(Optional<Event<Object>> event, List<Timer> timers) {
+        public Response merge(Response other) {
+            if (this.event.isPresent()) {
+                if (other.event.isPresent()) {
+                    assert this.event.get().timestamp() == other.event.get().timestamp();
+                    var eventMap = this.event.get().data();
+                    eventMap.putAll(other.event.get().data());
+                    var timerList = this.timers;
+                    timerList.addAll(other.timers);
+                    return new Response(
+                            Optional.of(new Event<>(
+                                    eventMap,
+                                    this.event.get().timestamp()
+                            )),
+                            timerList
+                    );
+                } else {
+                    ArrayList<Timer> newTimers = new ArrayList<>();
+                    newTimers.addAll(this.timers);
+                    newTimers.addAll(other.timers);
+                    return new Response(this.event, newTimers);
+                }
+            } else if (other.event.isPresent()) {
+                ArrayList<Timer> newTimers = new ArrayList<>();
+                newTimers.addAll(this.timers);
+                newTimers.addAll(other.timers);
+                return new Response(other.event, newTimers);
+            } else {
+                ArrayList<Timer> newTimers = new ArrayList<>();
+                newTimers.addAll(this.timers);
+                newTimers.addAll(other.timers);
+                return new Response(Optional.empty(), newTimers);
+            }
+        }
+
+        public static Response empty() {
+            return new  Response(Optional.empty(), new ArrayList<>());
+        }
+
+        public SaveResponse save() {
+            assert this.event.isPresent();
+            return new SaveResponse(
+                    this.event().get(),
+                    this.timers()
+            );
+        }
+    }
+
+    public record SaveResponse(Event<Object> event, List<Timer> timers) {}
 }

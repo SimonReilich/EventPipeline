@@ -16,20 +16,61 @@ public record Event<T>(Map<String, T> data, long timestamp) implements Comparabl
     public static String dataToString(Object data, int depth) {
         return switch (data) {
             case HashMap<?, ?> map ->
-                    dataToString(map.entrySet().toArray(), depth);
+                mapToString(map, depth);
             case int[] ints ->
-                    new String(new char[depth * 4]).replace("\0", " ") + "[" + String.join(", ", Arrays.stream(ints).mapToObj(Integer::toString).toList()) + "]";
+                    "[" + String.join(", ", Arrays.stream(ints).mapToObj(Integer::toString).toList()) + "]";
             case long[] longs ->
-                    new String(new char[depth * 4]).replace("\0", " ") + "[" + String.join(", ", Arrays.stream(longs).mapToObj(Long::toString).toList()) + "]";
+                    "[" + String.join(", ", Arrays.stream(longs).mapToObj(Long::toString).toList()) + "]";
             case double[] doubles ->
-                    new String(new char[depth * 4]).replace("\0", " ") + "[" + String.join(", ", Arrays.stream(doubles).mapToObj(Double::toString).toList()) + "]";
+                    "[" + String.join(", ", Arrays.stream(doubles).mapToObj(Double::toString).toList()) + "]";
             case Object[] objects ->
-                    new String(new char[depth * 4]).replace("\0", " ") + "[" + String.join(", ", Arrays.stream(objects).map(e -> Event.dataToString(e, depth + 1)).toList()) + "]";
+                    "[" + String.join(", ", Arrays.stream(objects).map(e -> Event.dataToString(e, depth)).toList()) + "]";
             case Map.Entry<?, ?> entry ->
-                    "\n" + new String(new char[depth * 4]).replace("\0", " ") + dataToString(entry.getKey(), 0) + " => " + dataToString(entry.getValue(), 0);
+                entryToString(entry, depth);
             case null -> "-";
             default -> data.toString();
         };
+    }
+
+    private static String mapToString(Map<?, ?> map, int depth) {
+        if (isSingleLineMap(map)) {
+            var entry = map.entrySet().iterator().next();
+            return entryToString(entry, depth).replace("\n", "").strip();
+        } else {
+            return "(" + map.entrySet().stream()
+                    .map(e -> dataToString(e, depth + 1))
+                    .collect(Collectors.joining()) + "\n" + " ".repeat(4 * depth) + ")";
+        }
+    }
+
+    private static String entryToString(Map.Entry<?, ?> entry, int depth) {
+        if (entry.getValue() instanceof Map<?, ?> && isSingleLineMap((Map<?, ?>) entry.getValue())) {
+            var valueStr = dataToString(entry.getValue(), depth);
+            if (valueStr.split("\r\n|\r|\n").length > 0) {
+                return "\n" + " ".repeat(4 * depth) + dataToString(entry.getKey(), 0) + "." + valueStr;
+            } else {
+                return dataToString(entry.getKey(), 0) + "." + dataToString(entry.getValue(), 0);
+            }
+        } else {
+            var valueStr = dataToString(entry.getValue(), depth);
+            if (valueStr.split("\r\n|\r|\n").length > 0) {
+                return "\n" + " ".repeat(4 * depth) + dataToString(entry.getKey(), 0) + " => " + valueStr;
+            } else {
+                return dataToString(entry.getKey(), 0) + " => " + dataToString(entry.getValue(), 0);
+            }
+        }
+    }
+
+    private static boolean isSingleLineMap(Map<?, ?> map) {
+        if (map.size() == 1) {
+            var entry = map.entrySet().iterator().next();
+            if (entry.getValue() instanceof Map<?, ?>) {
+                return isSingleLineMap((Map<?, ?>) entry.getValue());
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public Set<String> getTypes() {
@@ -49,7 +90,7 @@ public record Event<T>(Map<String, T> data, long timestamp) implements Comparabl
     }
 
     public String toString() {
-        return getTypes() + "; " + dataToString(data, 0) + "; " + timestamp();
+        return dataToString(data, 0) + "; " + timestamp();
     }
 
     public Event<T> filter(Set<String> types) {

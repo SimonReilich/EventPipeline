@@ -50,18 +50,12 @@ public class Main {
 
         addNode(
                 new CombineLatest(
-                        new Wrap(
-                                "OuterJoin",
                                 new OuterJoin(
                                         new RawInput("A"),
                                         new RawInput("C")
-                                )
-                        ),
+                                ),
                         new Previous(
-                                new Prefix(
-                                        "Prev.",
                                         new RawInput("B")
-                                )
                         ),
                         new RawInput("B")
                 )
@@ -115,8 +109,13 @@ public class Main {
         );
         dataMap.putAll(event.data());
         for (Node node : nodes) {
-            Optional<Event<Object>> res = node.give(events);
-            res.ifPresent(e -> dataMap.putAll(e.data()));
+            Node.Response res = node.give(events);
+            res.event().ifPresent(e -> dataMap.putAll(e.data()));
+            res.timers().forEach(t -> addEvent(new Event<>(
+                    "Synthetic" + t.target(),
+                    Map.of(),
+                    t.timestamp()
+            )));
         }
         if (log) {
             System.out.println();
@@ -136,16 +135,16 @@ public class Main {
         nodes.add(node);
     }
 
-    public static void logEventTriggerd(Event<?> event, String name) {
+    public static void logEventTriggerd(Event<?> event) {
         long ts = System.currentTimeMillis();
-        System.out.println("[TRIGGERED " + name + "]: " + event.toString()
+        System.out.println("[TRIGGERD]: " + event.toString()
                 + " (delay of " + (ts - event.timestamp()) + "ms)");
         log = true;
     }
 
-    public static void logEventSupplied(Event<?> event, String name) {
+    public static void logEventSupplied(Event<?> event) {
         long ts = System.currentTimeMillis();
-        System.out.println("[SUPPLIED " + name + "]: " + event.toString()
+        System.out.println("[SUPPLIED]: " + event.toString()
                 + " (delay of " + (ts - event.timestamp()) + "ms)");
         log = true;
     }

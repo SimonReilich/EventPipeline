@@ -30,17 +30,18 @@ public class RawInput extends Node {
     }
 
     @Override
-    protected void supply(Event<Object> input) {
-        Main.logEventSupplied(input, "Raw");
+    protected List<Timer> supply(Event<Object> input) {
+        Main.logEventSupplied(input);
+        return List.of();
     }
 
     @Override
-    protected Optional<Event<Object>> trigger(Event<Object> input) {
+    protected Response trigger(Event<Object> input) {
         if (input.getTypes().contains(event)) {
-            Main.logEventTriggerd(input, "Raw");
-            return Optional.of(input);
+            Main.logEventTriggerd(input);
+            return new Response(Optional.of(input), List.of());
         }
-        return Optional.empty();
+        return Response.empty();
     }
 
 }

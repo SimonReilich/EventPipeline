@@ -50,13 +50,14 @@ public class Group extends Node {
     }
 
     @Override
-    protected void supply(Event<Object> input) {
-        Main.logEventSupplied(input, "Group");
+    protected List<Timer> supply(Event<Object> input) {
+        Main.logEventSupplied(input);
+        List<Timer> timers = new ArrayList<>();
 
         Arrays.stream(other)
                 .forEach(node -> {
                     if (!input.filter(node.accepts()).data().isEmpty()) {
-                        node.supply(input.filter(node.accepts()));
+                        timers.addAll(node.supply(input.filter(node.accepts())));
 
                         values.putAll(input.filter(node.accepts()).getDataSet().stream()
                                 .map(e -> Map.entry(e.getKey(), Map.entry(e.getValue(), input.timestamp())))
@@ -65,7 +66,7 @@ public class Group extends Node {
                 });
 
         if (driving.acceptsAny(input.getTypes())) {
-            driving.supply(input.filter(driving.accepts()));
+            timers.addAll(driving.supply(input.filter(driving.accepts())));
         }
 
         for (var entry : values.entrySet()) {
@@ -73,17 +74,23 @@ public class Group extends Node {
                 values.remove(entry.getKey());
             }
         }
+
+        return timers;
     }
 
     @Override
-    protected Optional<Event<Object>> trigger(Event<Object> input) {
+    protected Response trigger(Event<Object> input) {
 
         if (driving.acceptsAny(input.getTypes())) {
             var outputDriving = driving.trigger(input.filter(driving.accepts()));
-            if (outputDriving.isPresent()) {
+            var timers = outputDriving.timers();
+            if (outputDriving.event().isPresent()) {
                 Arrays.stream(other)
                         .filter(node -> !(node instanceof Window))
-                        .flatMap(node -> node.trigger(input.filter(node.accepts())).stream())
+                        .map(node -> node.trigger(input.filter(node.accepts())))
+                        .peek(r -> timers.addAll(r.timers()))
+                        .filter(r -> r.event().isPresent())
+                        .map(r -> r.event().get())
                         .flatMap(e -> e.getDataSet().stream())
                         .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.timestamp())));
 
@@ -96,26 +103,29 @@ public class Group extends Node {
                                         input.timestamp()
                                 )
                         ))
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
+                        .peek(r -> timers.addAll(r.timers()))
+                        .filter(r -> r.event().isPresent())
+                        .map(r -> r.event().get())
                         .flatMap(e -> e.getDataSet().stream())
                         .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.timestamp())));
 
-                outputDriving.ifPresent(event -> event.getDataSet().forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.timestamp()))));
+                outputDriving.event().ifPresent(event -> event.getDataSet().forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.timestamp()))));
 
                 Optional<Event<Object>> result = Optional.of(new Event<>(
+                        "gr",
                         values.entrySet().stream()
                                 .map(e -> Map.entry(e.getKey(), e.getValue()))
                                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getKey())),
                         input.timestamp()
                 ));
                 values.clear();
-                result.ifPresent(r -> Main.logEventTriggerd(r, "Group"));
-                return result;
+                result.ifPresent(Main::logEventTriggerd);
+                return new Response(result, timers);
             }
+            return new Response(Optional.empty(), timers);
         }
 
-        return Optional.empty();
+        return Response.empty();
     }
 
 }
