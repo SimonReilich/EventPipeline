@@ -7,18 +7,18 @@ import java.util.stream.Collectors;
 
 public class CombineLatest extends Node {
 
+    private static long nextId = 0;
     private final Node[] children;
     private final Map<String, Object> values;
-    private static long nextId = 0;
-
-    private static long newId() {
-        return nextId++;
-    }
 
     public CombineLatest(Node... children) {
         super(newId());
         this.children = children;
         this.values = new HashMap<>();
+    }
+
+    private static long newId() {
+        return nextId++;
     }
 
     public String name() {

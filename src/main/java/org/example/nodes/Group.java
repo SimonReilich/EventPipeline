@@ -7,15 +7,11 @@ import java.util.stream.Collectors;
 
 public class Group extends Node {
 
+    private static long nextId = 0;
     private final Node driving;
     private final long tolerance;
     private final Node[] other;
     private final Map<String, Map.Entry<Object, Long>> values;
-    private static long nextId = 0;
-
-    private static long newId() {
-        return nextId++;
-    }
 
     public Group(Node driving, Node... other) {
         super(newId());
@@ -25,16 +21,20 @@ public class Group extends Node {
         this.values = new HashMap<>();
     }
 
-    public String name() {
-        return "g" + id;
-    }
-
     public Group(long tolerance, Node driving, Node... other) {
         super(newId());
         this.driving = driving;
         this.tolerance = tolerance;
         this.other = other;
         this.values = new HashMap<>();
+    }
+
+    private static long newId() {
+        return nextId++;
+    }
+
+    public String name() {
+        return "g" + id;
     }
 
     @Override

@@ -7,20 +7,20 @@ import java.util.stream.Collectors;
 
 public class InnerJoin extends Node {
 
+    private static long nextId = 0;
     private final Node driving;
     private final Node[] other;
     private final Map<String, Object> values;
-    private static long nextId = 0;
-
-    private static long newId() {
-        return nextId++;
-    }
 
     public InnerJoin(Node driving, Node... other) {
         super(newId());
         this.driving = driving;
         this.other = other;
         this.values = new HashMap<>();
+    }
+
+    private static long newId() {
+        return nextId++;
     }
 
     public String name() {

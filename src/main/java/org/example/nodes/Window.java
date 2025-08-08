@@ -10,6 +10,7 @@ public class Window extends Node {
     public static final Character ITEM = 'I';
     public static final Character TIME = 'T';
     public static final Character GROUP = 'G';
+    private static long nextId = 0;
     private final Node node;
     private final List<Map.Entry<String, Map.Entry<Object, Long>>> queue;
     private final Character rateMode;
@@ -19,11 +20,6 @@ public class Window extends Node {
     private long counter;
     private boolean synthetic;
     private long synthTimestamp;
-    private static long nextId = 0;
-
-    private static long newId() {
-        return nextId++;
-    }
 
     public Window(Character rateMode, long rate, Character sizeMode, long size, Node node) {
         super(newId());
@@ -37,6 +33,10 @@ public class Window extends Node {
         this.size = size;
         this.node = node;
         this.queue = new LinkedList<>();
+    }
+
+    private static long newId() {
+        return nextId++;
     }
 
     public String name() {

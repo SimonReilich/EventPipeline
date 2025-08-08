@@ -6,20 +6,20 @@ import java.util.*;
 
 public class Delay extends Node {
 
+    private static long nextId = 0;
     private final long delay;
     private final Node node;
     private final Queue<Response> saved;
-    private static long nextId = 0;
-
-    private static long newId() {
-        return nextId++;
-    }
 
     public Delay(long delay, Node node) {
         super(newId());
         this.delay = delay;
         this.node = node;
         this.saved = new LinkedList<>();
+    }
+
+    private static long newId() {
+        return nextId++;
     }
 
     public String name() {
