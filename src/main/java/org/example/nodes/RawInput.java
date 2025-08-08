@@ -31,14 +31,12 @@ public class RawInput extends Node {
 
     @Override
     protected List<Timer> supply(Event<Object> input) {
-        Main.logEventSupplied(input);
         return List.of();
     }
 
     @Override
     protected Response trigger(Event<Object> input) {
         if (input.getTypes().contains(event)) {
-            Main.logEventTriggerd(input);
             return new Response(Optional.of(input), List.of());
         }
         return Response.empty();

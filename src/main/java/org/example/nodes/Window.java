@@ -54,7 +54,6 @@ public class Window extends Node {
 
     @Override
     protected List<Timer> supply(Event<Object> input) {
-        Main.logEventSupplied(input);
         var result = node.give(input);
         if (result.event().isPresent()) {
             if (queue.isEmpty()) {
@@ -92,7 +91,6 @@ public class Window extends Node {
                             input.timestamp()
                     ));
                     queue.clear();
-                    Main.logEventTriggerd(res.get());
                     return new Response(res, List.of());
                 }
             } else if (rateMode == TIME && input.getTypes().contains("Synthetic" + this.hashCode())) {
@@ -102,7 +100,6 @@ public class Window extends Node {
                         input.timestamp()
                 ));
                 queue.clear();
-                Main.logEventTriggerd(res.get());
                 return new Response(res, List.of());
             } else if (rateMode == GROUP && input.getTypes().contains("SyntheticG" + this.hashCode())) {
                 Optional<Event<Object>> res = Optional.of(new Event<>(
@@ -111,7 +108,6 @@ public class Window extends Node {
                         input.timestamp()
                 ));
                 queue.clear();
-                Main.logEventTriggerd(res.get());
                 return new Response(res, List.of());
             }
         }

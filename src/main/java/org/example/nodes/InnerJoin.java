@@ -42,7 +42,6 @@ public class InnerJoin extends Node {
 
     @Override
     protected List<Timer> supply(Event<Object> input) {
-        Main.logEventSupplied(input);
         var timers = new ArrayList<Timer>();
         Arrays.stream(other)
                 .filter(node -> node.acceptsAny(input.getTypes()))
@@ -83,7 +82,6 @@ public class InnerJoin extends Node {
                     values.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)),
                     input.timestamp()
             ));
-            result.ifPresent(Main::logEventTriggerd);
             return new Response(result, timers);
         }
 

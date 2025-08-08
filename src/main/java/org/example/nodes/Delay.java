@@ -38,7 +38,6 @@ public class Delay extends Node {
 
     @Override
     protected List<Timer> supply(Event<Object> input) {
-        Main.logEventSupplied(input);
         saved.add(node.give(input));
         return List.of(new Timer(input.timestamp() + this.delay, this.hashCode()));
     }
@@ -52,7 +51,6 @@ public class Delay extends Node {
                         Objects.requireNonNull(saved.poll()).event().get().data(),
                         input.timestamp())
                 );
-                result.ifPresent(Main::logEventTriggerd);
                 return new Response(result, List.of());
             }
         }

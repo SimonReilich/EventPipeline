@@ -51,7 +51,6 @@ public class Group extends Node {
 
     @Override
     protected List<Timer> supply(Event<Object> input) {
-        Main.logEventSupplied(input);
         List<Timer> timers = new ArrayList<>();
 
         Arrays.stream(other)
@@ -119,7 +118,6 @@ public class Group extends Node {
                         input.timestamp()
                 ));
                 values.clear();
-                result.ifPresent(Main::logEventTriggerd);
                 return new Response(result, timers);
             }
             return new Response(Optional.empty(), timers);

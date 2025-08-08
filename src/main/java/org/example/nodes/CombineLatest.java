@@ -33,7 +33,6 @@ public class CombineLatest extends Node {
 
     @Override
     protected List<Timer> supply(Event<Object> input) {
-        Main.logEventSupplied(input);
         return Arrays.stream(children)
                 .map(c -> c.give(input))
                 .filter(r -> r.event().isPresent())
@@ -53,7 +52,6 @@ public class CombineLatest extends Node {
                         input.timestamp()
                 )
         );
-        result.ifPresent(Main::logEventTriggerd);
         return new Response(result, List.of());
     }
 

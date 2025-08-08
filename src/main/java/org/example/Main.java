@@ -4,6 +4,7 @@ import org.example.events.Event;
 import org.example.nodes.*;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 import static java.lang.Thread.sleep;
 
@@ -16,14 +17,11 @@ public class Main {
     private final PriorityQueue<Event<Object>> queue;
     private final ArrayList<Node> nodes;
     private Thread thread;
-
-    private static boolean log = false;
+    private final Consumer<Event<Object>> consumer;
 
     public static void main(String[] args) {
 
-        instance = new Main();
-
-        System.out.println();
+        instance = new Main(e -> System.out.println(Event.dataToString(e.data().get("cl"), 0) + "\n"));
 
         try {
             sleep(2000);
@@ -43,10 +41,11 @@ public class Main {
         }
     }
 
-    public Main() {
+    public Main(Consumer<Event<Object>> consumer) {
 
         queue = new PriorityQueue<>();
         nodes = new ArrayList<>();
+        this.consumer = consumer;
 
         addNode(
                 new CombineLatest(
@@ -117,10 +116,7 @@ public class Main {
                     t.timestamp()
             )));
         }
-        if (log) {
-            System.out.println();
-            log = false;
-        }
+        this.consumer.accept(events);
     }
 
     public static void addEvent(Event<Object> event) {
@@ -135,17 +131,7 @@ public class Main {
         nodes.add(node);
     }
 
-    public static void logEventTriggerd(Event<?> event) {
-        long ts = System.currentTimeMillis();
-        System.out.println("[TRIGGERD]: " + event.toString()
-                + " (delay of " + (ts - event.timestamp()) + "ms)");
-        log = true;
-    }
-
-    public static void logEventSupplied(Event<?> event) {
-        long ts = System.currentTimeMillis();
-        System.out.println("[SUPPLIED]: " + event.toString()
-                + " (delay of " + (ts - event.timestamp()) + "ms)");
-        log = true;
+    public static void logEvent(Event<?> event) {
+        System.out.println("\n[LOG]: " + event.toString());
     }
 }

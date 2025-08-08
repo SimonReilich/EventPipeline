@@ -33,7 +33,6 @@ public class Previous extends Node {
 
     @Override
     protected List<Timer> supply(Event<Object> input) {
-        Main.logEventSupplied(input);
         var res = node.give(input);
         res.event().ifPresent(event -> current = event);
         return res.timers();
@@ -50,7 +49,6 @@ public class Previous extends Node {
                     temp.data(),
                     input.timestamp())
             );
-            result.ifPresent(Main::logEventTriggerd);
             return new Response(result, List.of());
         }
         return Response.empty();
