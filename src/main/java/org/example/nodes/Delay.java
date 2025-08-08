@@ -58,14 +58,14 @@ public class Delay extends Node {
 
     @Override
     protected Response trigger(long timestamp) {
-            if (!saved.isEmpty() && saved.peek() != null && saved.peek().event().isPresent()) {
-                Optional<Event<Object>> result = Optional.of(new Event<>(
-                        "del",
-                        Objects.requireNonNull(saved.poll()).event().get().data(),
-                        timestamp)
-                );
-                return new Response(result, List.of());
-            }
-            return Response.empty();
+        if (!saved.isEmpty() && saved.peek() != null && saved.peek().event().isPresent()) {
+            Optional<Event<Object>> result = Optional.of(new Event<>(
+                    "del",
+                    saved.poll().event().get().data(),
+                    timestamp)
+            );
+            return new Response(result, List.of());
+        }
+        return Response.empty();
     }
 }

@@ -84,37 +84,20 @@ public class Window extends Node {
 
     @Override
     protected Response trigger(long timestamp) {
-            if (sizeMode == ITEM) {
-                while (queue.size() > size) {
-                    queue.removeFirst();
-                }
-            } else if (sizeMode == TIME) {
-                while (queue.getFirst() != null && queue.getFirst().getValue().getValue() < timestamp - size) {
-                    queue.removeFirst();
-                }
+        if (sizeMode == ITEM) {
+            while (queue.size() > size) {
+                queue.removeFirst();
             }
+        } else if (sizeMode == TIME) {
+            while (queue.getFirst() != null && queue.getFirst().getValue().getValue() < timestamp - size) {
+                queue.removeFirst();
+            }
+        }
 
-            if (rateMode == ITEM) {
-                counter++;
-                if (counter >= rate) {
-                    counter = 0;
-                    Optional<Event<Object>> res = Optional.of(new Event<>(
-                            "w",
-                            queue.stream().map(e -> e.getValue().getKey()).toArray(),
-                            timestamp
-                    ));
-                    queue.clear();
-                    return new Response(res, List.of());
-                }
-            } else if (rateMode == TIME && timestamp == synthTimestamp && synthetic) {
-                Optional<Event<Object>> res = Optional.of(new Event<>(
-                        "w",
-                        queue.stream().map(e -> e.getValue().getKey()).toArray(),
-                        timestamp
-                ));
-                queue.clear();
-                return new Response(res, List.of());
-            } else if (rateMode == GROUP && timestamp == -this.hashCode()) {
+        if (rateMode == ITEM) {
+            counter++;
+            if (counter >= rate) {
+                counter = 0;
                 Optional<Event<Object>> res = Optional.of(new Event<>(
                         "w",
                         queue.stream().map(e -> e.getValue().getKey()).toArray(),
@@ -123,6 +106,23 @@ public class Window extends Node {
                 queue.clear();
                 return new Response(res, List.of());
             }
+        } else if (rateMode == TIME && timestamp == synthTimestamp && synthetic) {
+            Optional<Event<Object>> res = Optional.of(new Event<>(
+                    "w",
+                    queue.stream().map(e -> e.getValue().getKey()).toArray(),
+                    timestamp
+            ));
+            queue.clear();
+            return new Response(res, List.of());
+        } else if (rateMode == GROUP && timestamp == -this.hashCode()) {
+            Optional<Event<Object>> res = Optional.of(new Event<>(
+                    "w",
+                    queue.stream().map(e -> e.getValue().getKey()).toArray(),
+                    timestamp
+            ));
+            queue.clear();
+            return new Response(res, List.of());
+        }
 
         return Response.empty();
     }

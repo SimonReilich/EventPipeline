@@ -3,21 +3,42 @@ package org.example;
 import org.example.events.Event;
 import org.example.nodes.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.function.Consumer;
 
 import static java.lang.Thread.sleep;
 
 public class Main {
 
-    public static Main instance;
-
     private final static long INPUT_DELAY = 500;
-
+    public static Main instance;
     private final PriorityQueue<Event<Object>> queue;
     private final ArrayList<Node> nodes;
-    private Thread thread;
     private final Consumer<Event<Object>> consumer;
+    private Thread thread;
+
+    public Main(Consumer<Event<Object>> consumer) {
+
+        queue = new PriorityQueue<>();
+        nodes = new ArrayList<>();
+        this.consumer = consumer;
+
+        addNode(
+                new CombineLatest(
+                        new OuterJoin(
+                                new RawInput("A"),
+                                new RawInput("C")
+                        ),
+                        new Previous(
+                                new RawInput("B")
+                        ),
+                        new RawInput("B")
+                )
+        );
+    }
 
     public static void main(String[] args) {
 
@@ -41,24 +62,8 @@ public class Main {
         }
     }
 
-    public Main(Consumer<Event<Object>> consumer) {
-
-        queue = new PriorityQueue<>();
-        nodes = new ArrayList<>();
-        this.consumer = consumer;
-
-        addNode(
-                new CombineLatest(
-                                new OuterJoin(
-                                        new RawInput("A"),
-                                        new RawInput("C")
-                                ),
-                        new Previous(
-                                        new RawInput("B")
-                        ),
-                        new RawInput("B")
-                )
-        );
+    public static void addEvent(Event<Object> event) {
+        instance.addEventObj(event);
     }
 
     public void initThread() {
@@ -119,19 +124,11 @@ public class Main {
         this.consumer.accept(events);
     }
 
-    public static void addEvent(Event<Object> event) {
-        instance.addEventObj(event);
-    }
-
     private void addEventObj(Event<Object> event) {
         queue.add(event);
     }
 
     public void addNode(Node node) {
         nodes.add(node);
-    }
-
-    public static void logEvent(Event<?> event) {
-        System.out.println("\n[LOG]: " + event.toString());
     }
 }

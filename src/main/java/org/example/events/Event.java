@@ -1,5 +1,7 @@
 package org.example.events;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,18 +17,14 @@ public record Event<T>(Map<String, T> data, long timestamp) implements Comparabl
 
     public static String dataToString(Object data, int depth) {
         return switch (data) {
-            case HashMap<?, ?> map ->
-                mapToString(map, depth);
-            case int[] ints ->
-                    "[" + String.join(", ", Arrays.stream(ints).mapToObj(Integer::toString).toList()) + "]";
-            case long[] longs ->
-                    "[" + String.join(", ", Arrays.stream(longs).mapToObj(Long::toString).toList()) + "]";
+            case HashMap<?, ?> map -> mapToString(map, depth);
+            case int[] ints -> "[" + String.join(", ", Arrays.stream(ints).mapToObj(Integer::toString).toList()) + "]";
+            case long[] longs -> "[" + String.join(", ", Arrays.stream(longs).mapToObj(Long::toString).toList()) + "]";
             case double[] doubles ->
                     "[" + String.join(", ", Arrays.stream(doubles).mapToObj(Double::toString).toList()) + "]";
             case Object[] objects ->
                     "[" + String.join(", ", Arrays.stream(objects).map(e -> Event.dataToString(e, depth)).toList()) + "]";
-            case Map.Entry<?, ?> entry ->
-                entryToString(entry, depth);
+            case Map.Entry<?, ?> entry -> entryToString(entry, depth);
             case null -> "-";
             default -> data.toString();
         };
@@ -89,6 +87,8 @@ public record Event<T>(Map<String, T> data, long timestamp) implements Comparabl
         return Long.compare(this.timestamp(), o.timestamp());
     }
 
+    @Override
+    @NotNull
     public String toString() {
         return dataToString(data, 0) + "; " + timestamp();
     }

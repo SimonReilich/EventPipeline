@@ -2,7 +2,10 @@ package org.example.nodes;
 
 import org.example.events.Event;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 public class Previous extends Node {
 

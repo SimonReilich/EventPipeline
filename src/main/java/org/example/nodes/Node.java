@@ -16,7 +16,7 @@ public abstract class Node {
     public abstract Set<String> requires();
 
     public boolean acceptsAny(Set<String> input) {
-        for (var type: input) {
+        for (var type : input) {
             if (accepts().contains(type)) {
                 return true;
             }
@@ -40,9 +40,14 @@ public abstract class Node {
         }
     }
 
-    public record Timer(Long timestamp, int target) {}
+    public record Timer(Long timestamp, int target) {
+    }
 
     public record Response(Optional<Event<Object>> event, List<Timer> timers) {
+        public static Response empty() {
+            return new Response(Optional.empty(), new ArrayList<>());
+        }
+
         public Response merge(Response other) {
             if (this.event.isPresent()) {
                 if (other.event.isPresent()) {
@@ -77,10 +82,6 @@ public abstract class Node {
             }
         }
 
-        public static Response empty() {
-            return new  Response(Optional.empty(), new ArrayList<>());
-        }
-
         public SaveResponse save() {
             assert this.event.isPresent();
             return new SaveResponse(
@@ -90,5 +91,6 @@ public abstract class Node {
         }
     }
 
-    public record SaveResponse(Event<Object> event, List<Timer> timers) {}
+    public record SaveResponse(Event<Object> event, List<Timer> timers) {
+    }
 }

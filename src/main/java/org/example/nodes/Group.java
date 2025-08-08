@@ -92,40 +92,40 @@ public class Group extends Node {
 
     @Override
     protected Response trigger(long timestamp) {
-            var outputDriving = driving.trigger(timestamp);
-            var timers = outputDriving.timers();
-            if (outputDriving.event().isPresent()) {
-                Arrays.stream(other)
-                        .filter(node -> !(node instanceof Window))
-                        .map(node -> node.trigger(timestamp))
-                        .peek(r -> timers.addAll(r.timers()))
-                        .filter(r -> r.event().isPresent())
-                        .map(r -> r.event().get())
-                        .flatMap(e -> e.getDataSet().stream())
-                        .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), timestamp)));
+        var outputDriving = driving.trigger(timestamp);
+        var timers = outputDriving.timers();
+        if (outputDriving.event().isPresent()) {
+            Arrays.stream(other)
+                    .filter(node -> !(node instanceof Window))
+                    .map(node -> node.trigger(timestamp))
+                    .peek(r -> timers.addAll(r.timers()))
+                    .filter(r -> r.event().isPresent())
+                    .map(r -> r.event().get())
+                    .flatMap(e -> e.getDataSet().stream())
+                    .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), timestamp)));
 
-                Arrays.stream(other)
-                        .filter(node -> node instanceof Window)
-                        .map(n -> n.trigger(-n.hashCode()))
-                        .peek(r -> timers.addAll(r.timers()))
-                        .filter(r -> r.event().isPresent())
-                        .map(r -> r.event().get())
-                        .flatMap(e -> e.getDataSet().stream())
-                        .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), timestamp)));
+            Arrays.stream(other)
+                    .filter(node -> node instanceof Window)
+                    .map(n -> n.trigger(-n.hashCode()))
+                    .peek(r -> timers.addAll(r.timers()))
+                    .filter(r -> r.event().isPresent())
+                    .map(r -> r.event().get())
+                    .flatMap(e -> e.getDataSet().stream())
+                    .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), timestamp)));
 
-                outputDriving.event().ifPresent(event -> event.getDataSet().forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), timestamp))));
+            outputDriving.event().ifPresent(event -> event.getDataSet().forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), timestamp))));
 
-                Optional<Event<Object>> result = Optional.of(new Event<>(
-                        "gr",
-                        values.entrySet().stream()
-                                .map(e -> Map.entry(e.getKey(), e.getValue()))
-                                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getKey())),
-                        timestamp
-                ));
-                values.clear();
-                return new Response(result, timers);
-            }
-            return new Response(Optional.empty(), timers);
+            Optional<Event<Object>> result = Optional.of(new Event<>(
+                    "gr",
+                    values.entrySet().stream()
+                            .map(e -> Map.entry(e.getKey(), e.getValue()))
+                            .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getKey())),
+                    timestamp
+            ));
+            values.clear();
+            return new Response(result, timers);
+        }
+        return new Response(Optional.empty(), timers);
     }
 
 }
