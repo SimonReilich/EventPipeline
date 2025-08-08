@@ -55,11 +55,11 @@ public class Group extends Node {
 
         Arrays.stream(other)
                 .forEach(node -> {
-                    if (!input.filter(node.accepts()).getData().isEmpty()) {
+                    if (!input.filter(node.accepts()).data().isEmpty()) {
                         node.supply(input.filter(node.accepts()));
 
                         values.putAll(input.filter(node.accepts()).getDataSet().stream()
-                                .map(e -> Map.entry(e.getKey(), Map.entry(e.getValue(), input.getTimestamp())))
+                                .map(e -> Map.entry(e.getKey(), Map.entry(e.getValue(), input.timestamp())))
                                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
                     }
                 });
@@ -69,7 +69,7 @@ public class Group extends Node {
         }
 
         for (var entry : values.entrySet()) {
-            if (entry.getValue().getValue() + tolerance < input.getTimestamp()) {
+            if (entry.getValue().getValue() + tolerance < input.timestamp()) {
                 values.remove(entry.getKey());
             }
         }
@@ -85,7 +85,7 @@ public class Group extends Node {
                         .filter(node -> !(node instanceof Window))
                         .flatMap(node -> node.trigger(input.filter(node.accepts())).stream())
                         .flatMap(e -> e.getDataSet().stream())
-                        .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.getTimestamp())));
+                        .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.timestamp())));
 
                 Arrays.stream(other)
                         .filter(node -> node instanceof Window)
@@ -93,21 +93,21 @@ public class Group extends Node {
                                 new Event<>(
                                         "SyntheticG" + n.hashCode(),
                                         null,
-                                        input.getTimestamp()
+                                        input.timestamp()
                                 )
                         ))
                         .filter(Optional::isPresent)
                         .map(Optional::get)
                         .flatMap(e -> e.getDataSet().stream())
-                        .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.getTimestamp())));
+                        .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.timestamp())));
 
-                outputDriving.ifPresent(event -> event.getDataSet().forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.getTimestamp()))));
+                outputDriving.ifPresent(event -> event.getDataSet().forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.timestamp()))));
 
                 Optional<Event<Object>> result = Optional.of(new Event<>(
                         values.entrySet().stream()
                                 .map(e -> Map.entry(e.getKey(), e.getValue()))
                                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getKey())),
-                        input.getTimestamp()
+                        input.timestamp()
                 ));
                 values.clear();
                 result.ifPresent(r -> Main.logEventTriggerd(r, "Group"));

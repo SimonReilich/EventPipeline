@@ -6,8 +6,6 @@ import org.example.nodes.RawInput;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OuterJoinTest {
@@ -37,8 +35,8 @@ public class OuterJoinTest {
         assertTrue(resOpt.isPresent());
 
         var result = resOpt.get();
-        assertEquals(100, result.getTimestamp());
-        assertEquals(0, (Integer) result.getData().get("A"));
+        assertEquals(100, result.timestamp());
+        assertEquals(0, (Integer) result.data().get("A"));
     }
 
     @Test

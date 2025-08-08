@@ -20,8 +20,8 @@ public class WindowTest {
         assertTrue(optRes.isPresent());
         var result = optRes.get();
 
-        assertEquals(50, result.getTimestamp());
-        assertArrayEquals(new Object[]{1}, (Object[]) result.getData().get("A list"));
+        assertEquals(50, result.timestamp());
+        assertArrayEquals(new Object[]{1}, (Object[]) result.data().get("A list"));
     }
 
     @Test
@@ -43,7 +43,7 @@ public class WindowTest {
         assertTrue(optRes.isPresent());
         var result = optRes.get();
 
-        assertEquals(50, result.getTimestamp());
+        assertEquals(50, result.timestamp());
         assertEquals(2, ((Object[]) result.getValue("A list")).length);
     }
 }

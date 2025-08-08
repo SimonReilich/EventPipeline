@@ -48,8 +48,8 @@ public class Previous extends Node {
         current = null;
         if (temp != null) {
             Optional<Event<Object>> result = Optional.of(new Event<>(
-                    temp.getData(),
-                    input.getTimestamp())
+                    temp.data(),
+                    input.timestamp())
             );
             result.ifPresent(r -> Main.logEventTriggerd(r, "Previous"));
             return result;

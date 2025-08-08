@@ -47,7 +47,7 @@ public class CombineLatest extends Node {
         Optional<Event<Object>> result = Optional.of(
                 new Event<>(
                         values,
-                        input.getTimestamp()
+                        input.timestamp()
                 )
         );
         result.ifPresent(r -> Main.logEventTriggerd(r, "CombineLatest"));

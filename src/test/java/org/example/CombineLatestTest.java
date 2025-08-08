@@ -25,7 +25,7 @@ public class CombineLatestTest {
         assertTrue(optRes.isPresent());
         var result = optRes.get();
 
-        assertEquals(100, result.getTimestamp());
+        assertEquals(100, result.timestamp());
         assertArrayEquals(new Object[]{Map.entry("A", 1), Map.entry("B", 1), Map.entry("C", 1)}, (result.getDataSet().toArray()));
     }
 

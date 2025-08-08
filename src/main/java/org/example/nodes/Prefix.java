@@ -47,7 +47,7 @@ public class Prefix extends Node {
                 objectEvent.getDataSet().stream()
                         .map(e -> Map.entry(prefix + e.getKey(), e.getValue()))
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)),
-                objectEvent.getTimestamp()
+                objectEvent.timestamp()
         ));
         result.ifPresent(r -> Main.logEventTriggerd(r, "Prefix"));
         return result;

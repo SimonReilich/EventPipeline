@@ -27,7 +27,7 @@ public class PreviousTest {
         assertTrue(optRes.isPresent());
         var result = optRes.get();
 
-        assertEquals(50, result.getTimestamp());
+        assertEquals(50, result.timestamp());
         assertEquals(0, result.getValue("A"));
     }
 

@@ -41,8 +41,8 @@ public class Wrap extends Node {
         var nodeRes = node.trigger(input);
         return nodeRes.map(objectEvent -> new Event<>(
                 name,
-                objectEvent.getData(),
-                objectEvent.getTimestamp()
+                objectEvent.data(),
+                objectEvent.timestamp()
         ));
     }
 }

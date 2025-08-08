@@ -55,18 +55,18 @@ public class OuterJoin extends Node {
     @Override
     protected Optional<Event<Object>> trigger(Event<Object> input) {
         values.putAll(Arrays.stream(other)
-                .flatMap(n -> n.trigger(input).orElse(new Event<>("", Map.of(), 0)).getData().entrySet().stream())
+                .flatMap(n -> n.trigger(input).orElse(new Event<>("", Map.of(), 0)).data().entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2)));
 
         var outputDriving = driving.trigger(input);
         outputDriving.ifPresent(d -> {
             values.clear();
-            values.putAll(d.getData());
+            values.putAll(d.data());
         });
 
         Optional<Event<Object>> result = Optional.of(new Event<>(
                 values.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)),
-                input.getTimestamp()
+                input.timestamp()
         ));
         result.ifPresent(r -> Main.logEventSupplied(r, "OuterJoin"));
         return result;

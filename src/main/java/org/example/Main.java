@@ -9,15 +9,41 @@ import static java.lang.Thread.sleep;
 
 public class Main {
 
+    public static Main instance;
+
     private final static long INPUT_DELAY = 500;
 
-    private static PriorityQueue<Event<Object>> queue;
-    private static ArrayList<Node> nodes;
-    private static Thread thread;
+    private final PriorityQueue<Event<Object>> queue;
+    private final ArrayList<Node> nodes;
+    private Thread thread;
 
     private static boolean log = false;
 
     public static void main(String[] args) {
+
+        instance = new Main();
+
+        System.out.println();
+
+        try {
+            sleep(2000);
+            long ts = System.currentTimeMillis() + 1000;
+            instance.onEvent(new Event<>("B", "hi", ts));
+            instance.onEvent(new Event<>("A", false, ts));
+            instance.onEvent(new Event<>("C", 1.5, ts));
+            instance.onEvent(new Event<>("C", 2.5, ts + 200));
+            instance.onEvent(new Event<>("B", "String", ts + 400));
+            instance.onEvent(new Event<>("B", "hello", ts + 500));
+            instance.onEvent(new Event<>("A", true, ts + 1000));
+            instance.onEvent(new Event<>("B", "test", ts + 1500));
+            instance.onEvent(new Event<>("C", 3.5, ts + 4200));
+            instance.onEvent(new Event<>("A", new int[]{1, 2, 3}, ts + 5000));
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Main() {
 
         queue = new PriorityQueue<>();
         nodes = new ArrayList<>();
@@ -40,32 +66,13 @@ public class Main {
                         new RawInput("B")
                 )
         );
-
-        System.out.println();
-
-        try {
-            sleep(2000);
-            long ts = System.currentTimeMillis() + 1000;
-            onEvent(new Event<>("B", "hi", ts));
-            onEvent(new Event<>("A", false, ts));
-            onEvent(new Event<>("C", 1.5, ts));
-            onEvent(new Event<>("C", 2.5, ts + 200));
-            onEvent(new Event<>("B", "String", ts + 400));
-            onEvent(new Event<>("B", "hello", ts + 500));
-            onEvent(new Event<>("A", true, ts + 1000));
-            onEvent(new Event<>("B", "test", ts + 1500));
-            onEvent(new Event<>("C", 3.5, ts + 4200));
-            onEvent(new Event<>("A", new int[]{1, 2, 3}, ts + 5000));
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 
-    public static void initThread() {
+    public void initThread() {
         thread = new Thread(() -> {
             try {
                 assert queue.peek() != null;
-                sleep((queue.peek().getTimestamp() + INPUT_DELAY) - System.currentTimeMillis());
+                sleep((queue.peek().timestamp() + INPUT_DELAY) - System.currentTimeMillis());
             } catch (InterruptedException ex) {
                 throw new RuntimeException(ex);
             }
@@ -78,7 +85,7 @@ public class Main {
         thread.start();
     }
 
-    private static void onEvent(Event<Object> e) {
+    private void onEvent(Event<Object> e) {
         if (Thread.currentThread().getName().equals("main")) {
             if (thread != null && thread.isAlive()) {
                 try {
@@ -90,7 +97,7 @@ public class Main {
             queue.add(e);
         }
         synchronized (queue) {
-            while (queue.peek() != null && queue.peek().getTimestamp() + INPUT_DELAY <= System.currentTimeMillis()) {
+            while (queue.peek() != null && queue.peek().timestamp() + INPUT_DELAY <= System.currentTimeMillis()) {
                 assert queue.peek() != null;
                 runPipeline(queue.poll());
             }
@@ -100,16 +107,16 @@ public class Main {
         }
     }
 
-    private static void runPipeline(Event<Object> event) {
+    private void runPipeline(Event<Object> event) {
         Map<String, Object> dataMap = new HashMap<>();
         Event<Object> events = new Event<>(
                 dataMap,
-                event.getTimestamp()
+                event.timestamp()
         );
-        dataMap.putAll(event.getData());
+        dataMap.putAll(event.data());
         for (Node node : nodes) {
             Optional<Event<Object>> res = node.give(events);
-            res.ifPresent(e -> dataMap.putAll(e.getData()));
+            res.ifPresent(e -> dataMap.putAll(e.data()));
         }
         if (log) {
             System.out.println();
@@ -118,24 +125,28 @@ public class Main {
     }
 
     public static void addEvent(Event<Object> event) {
+        instance.addEventObj(event);
+    }
+
+    private void addEventObj(Event<Object> event) {
         queue.add(event);
     }
 
-    public static void addNode(Node node) {
+    public void addNode(Node node) {
         nodes.add(node);
     }
 
     public static void logEventTriggerd(Event<?> event, String name) {
         long ts = System.currentTimeMillis();
         System.out.println("[TRIGGERED " + name + "]: " + event.toString()
-                + " (delay of " + (ts - event.getTimestamp()) + "ms)");
+                + " (delay of " + (ts - event.timestamp()) + "ms)");
         log = true;
     }
 
     public static void logEventSupplied(Event<?> event, String name) {
         long ts = System.currentTimeMillis();
         System.out.println("[SUPPLIED " + name + "]: " + event.toString()
-                + " (delay of " + (ts - event.getTimestamp()) + "ms)");
+                + " (delay of " + (ts - event.timestamp()) + "ms)");
         log = true;
     }
 }

@@ -62,12 +62,12 @@ public class Window extends Node {
                     Main.addEvent(new Event<>(
                             "Synthetic" + this.hashCode(),
                             null,
-                            input.getTimestamp() + this.rate
+                            input.timestamp() + this.rate
                     ));
                 }
             }
             queue.addAll(result.get().getDataSet().stream()
-                    .map(e -> Map.entry(e.getKey(), Map.entry(e.getValue(), input.getTimestamp())))
+                    .map(e -> Map.entry(e.getKey(), Map.entry(e.getValue(), input.timestamp())))
                     .collect(Collectors.toSet()));
         }
     }
@@ -80,7 +80,7 @@ public class Window extends Node {
                     queue.removeFirst();
                 }
             } else if (sizeMode == TIME) {
-                while (queue.getFirst() != null && queue.getFirst().getValue().getValue() < input.getTimestamp() - size) {
+                while (queue.getFirst() != null && queue.getFirst().getValue().getValue() < input.timestamp() - size) {
                     queue.removeFirst();
                 }
             }
@@ -92,7 +92,7 @@ public class Window extends Node {
                     Optional<Event<Object>> res = Optional.of(new Event<>(
                             queue.getFirst().getKey() + " list",
                             queue.stream().map(e -> e.getValue().getKey()).toArray(),
-                            input.getTimestamp()
+                            input.timestamp()
                     ));
                     queue.clear();
                     Main.logEventTriggerd(res.get(), "Window");
@@ -102,7 +102,7 @@ public class Window extends Node {
                 Optional<Event<Object>> res = Optional.of(new Event<>(
                         queue.getFirst().getKey() + " list",
                         queue.stream().map(e -> e.getValue().getKey()).toArray(),
-                        input.getTimestamp()
+                        input.timestamp()
                 ));
                 queue.clear();
                 Main.logEventTriggerd(res.get(), "Window");
@@ -111,7 +111,7 @@ public class Window extends Node {
                 Optional<Event<Object>> res = Optional.of(new Event<>(
                         queue.getFirst().getKey() + " list",
                         queue.stream().map(e -> e.getValue().getKey()).toArray(),
-                        input.getTimestamp()
+                        input.timestamp()
                 ));
                 queue.clear();
                 Main.logEventTriggerd(res.get(), "Window");

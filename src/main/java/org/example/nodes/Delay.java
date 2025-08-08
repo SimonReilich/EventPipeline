@@ -45,7 +45,7 @@ public class Delay extends Node {
             Main.addEvent(new Event<>(
                     "Synthetic" + this.hashCode(),
                     null,
-                    input.getTimestamp() + this.delay
+                    input.timestamp() + this.delay
             ));
         }
     }
@@ -55,8 +55,8 @@ public class Delay extends Node {
         if (input.getTypes().contains("Synthetic" + this.hashCode())) {
             if (!saved.isEmpty() && saved.peek() != null) {
                 Optional<Event<Object>> result = Optional.of(new Event<>(
-                        Objects.requireNonNull(saved.poll()).getData(),
-                        input.getTimestamp())
+                        Objects.requireNonNull(saved.poll()).data(),
+                        input.timestamp())
                 );
                 result.ifPresent(r -> Main.logEventTriggerd(r, "Delay"));
                 return result;
