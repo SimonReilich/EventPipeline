@@ -39,6 +39,10 @@ public class Window extends Node {
         this.queue = new LinkedList<>();
     }
 
+    public String name() {
+        return "w" + id;
+    }
+
     @Override
     public Set<String> accepts() {
         Set<String> accepts = new HashSet<>();

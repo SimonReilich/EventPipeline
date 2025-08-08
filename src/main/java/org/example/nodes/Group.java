@@ -25,6 +25,10 @@ public class Group extends Node {
         this.values = new HashMap<>();
     }
 
+    public String name() {
+        return "g" + id;
+    }
+
     public Group(long tolerance, Node driving, Node... other) {
         super(newId());
         this.driving = driving;

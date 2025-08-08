@@ -21,6 +21,10 @@ public class CombineLatest extends Node {
         this.values = new HashMap<>();
     }
 
+    public String name() {
+        return "cl" + id;
+    }
+
     @Override
     public Set<String> accepts() {
         return children().stream().flatMap(n -> n.accepts().stream()).collect(Collectors.toSet());

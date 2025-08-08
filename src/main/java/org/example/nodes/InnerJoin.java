@@ -23,6 +23,10 @@ public class InnerJoin extends Node {
         this.values = new HashMap<>();
     }
 
+    public String name() {
+        return "ij" + id;
+    }
+
     @Override
     public Set<String> accepts() {
         var accepts = new HashSet<>(driving.accepts());

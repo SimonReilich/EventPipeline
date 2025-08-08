@@ -16,10 +16,10 @@ public class EventPipeline {
     private final static long INPUT_DELAY = 500;
     private final PriorityQueue<Event<Object>> queue;
     private final ArrayList<Node> nodes;
-    private final Consumer<Event<Object>> consumer;
+    private final Consumer<Map.Entry<String, Object>> consumer;
     private Thread thread;
 
-    public EventPipeline(Consumer<Event<Object>> consumer) {
+    public EventPipeline(Consumer<Map.Entry<String, Object>> consumer) {
         queue = new PriorityQueue<>();
         nodes = new ArrayList<>();
         this.consumer = consumer;
@@ -88,6 +88,6 @@ public class EventPipeline {
                     t.timestamp()
             )));
         }
-        this.consumer.accept(events);
+        events.getDataSet().stream().filter(e -> nodes.stream().anyMatch(n -> n.name().equals(e.getKey()))).forEach(this.consumer);
     }
 }

@@ -10,12 +10,10 @@ import static java.lang.Thread.sleep;
 
 public class Main {
 
-    private static EventPipeline instance;
-
     public static void main(String[] args) {
 
-        instance = new EventPipeline(
-                e -> System.out.println(Event.dataToString(e.data(), 0) + "\n")
+        EventPipeline instance = new EventPipeline(
+                e -> System.out.println(Event.dataToString(e, 0) + "\n")
         );
 
         instance.addNode(

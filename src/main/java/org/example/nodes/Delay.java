@@ -22,6 +22,10 @@ public class Delay extends Node {
         this.saved = new LinkedList<>();
     }
 
+    public String name() {
+        return "del" + delay;
+    }
+
     @Override
     public Set<String> accepts() {
         Set<String> accepts = new HashSet<>();

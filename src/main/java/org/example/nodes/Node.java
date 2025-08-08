@@ -15,6 +15,8 @@ public abstract class Node {
         this.id = id;
     }
 
+    public abstract String name();
+
     // dependencies of the node + synthetic signals
     public abstract Set<String> accepts();
 

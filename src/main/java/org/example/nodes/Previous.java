@@ -23,6 +23,10 @@ public class Previous extends Node {
         this.node = node;
     }
 
+    public String name() {
+        return "prv" + id;
+    }
+
     @Override
     public Set<String> accepts() {
         return new HashSet<>(node.accepts());

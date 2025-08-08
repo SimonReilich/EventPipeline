@@ -16,6 +16,10 @@ public class RawInput extends Node {
         this.event = event;
     }
 
+    public String name() {
+        return event;
+    }
+
     @Override
     public Set<String> accepts() {
         return Set.of(event);
