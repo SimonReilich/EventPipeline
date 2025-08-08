@@ -1,32 +1,24 @@
 package org.example;
 
 import org.example.events.Event;
-import org.example.nodes.*;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.function.Consumer;
+import org.example.nodes.CombineLatest;
+import org.example.nodes.OuterJoin;
+import org.example.nodes.Previous;
+import org.example.nodes.RawInput;
 
 import static java.lang.Thread.sleep;
 
 public class Main {
 
-    private final static long INPUT_DELAY = 500;
-    public static Main instance;
-    private final PriorityQueue<Event<Object>> queue;
-    private final ArrayList<Node> nodes;
-    private final Consumer<Event<Object>> consumer;
-    private Thread thread;
+    private static EventPipeline instance;
 
-    public Main(Consumer<Event<Object>> consumer) {
+    public static void main(String[] args) {
 
-        queue = new PriorityQueue<>();
-        nodes = new ArrayList<>();
-        this.consumer = consumer;
+        instance = new EventPipeline(
+                e -> System.out.println(Event.dataToString(e.data().get("cl"), 0) + "\n")
+        );
 
-        addNode(
+        instance.addNode(
                 new CombineLatest(
                         new OuterJoin(
                                 new RawInput("A"),
@@ -38,11 +30,6 @@ public class Main {
                         new RawInput("B")
                 )
         );
-    }
-
-    public static void main(String[] args) {
-
-        instance = new Main(e -> System.out.println(Event.dataToString(e.data().get("cl"), 0) + "\n"));
 
         try {
             sleep(2000);
@@ -60,75 +47,5 @@ public class Main {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static void addEvent(Event<Object> event) {
-        instance.addEventObj(event);
-    }
-
-    public void initThread() {
-        thread = new Thread(() -> {
-            try {
-                assert queue.peek() != null;
-                sleep((queue.peek().timestamp() + INPUT_DELAY) - System.currentTimeMillis());
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
-            onEvent(new Event<>(
-                    "System",
-                    null,
-                    System.currentTimeMillis())
-            );
-        });
-        thread.start();
-    }
-
-    private void onEvent(Event<Object> e) {
-        if (Thread.currentThread().getName().equals("main")) {
-            if (thread != null && thread.isAlive()) {
-                try {
-                    thread.join();
-                } catch (InterruptedException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-            queue.add(e);
-        }
-        synchronized (queue) {
-            while (queue.peek() != null && queue.peek().timestamp() + INPUT_DELAY <= System.currentTimeMillis()) {
-                assert queue.peek() != null;
-                runPipeline(queue.poll());
-            }
-            if (!queue.isEmpty()) {
-                initThread();
-            }
-        }
-    }
-
-    private void runPipeline(Event<Object> event) {
-        Map<String, Object> dataMap = new HashMap<>();
-        Event<Object> events = new Event<>(
-                dataMap,
-                event.timestamp()
-        );
-        dataMap.putAll(event.data());
-        for (Node node : nodes) {
-            Node.Response res = node.give(events);
-            res.event().ifPresent(e -> dataMap.putAll(e.data()));
-            res.timers().forEach(t -> addEvent(new Event<>(
-                    "Synthetic" + t.target(),
-                    Map.of(),
-                    t.timestamp()
-            )));
-        }
-        this.consumer.accept(events);
-    }
-
-    private void addEventObj(Event<Object> event) {
-        queue.add(event);
-    }
-
-    public void addNode(Node node) {
-        nodes.add(node);
     }
 }

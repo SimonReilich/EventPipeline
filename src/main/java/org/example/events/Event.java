@@ -1,7 +1,5 @@
 package org.example.events;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,7 +86,6 @@ public record Event<T>(Map<String, T> data, long timestamp) implements Comparabl
     }
 
     @Override
-    @NotNull
     public String toString() {
         return dataToString(data, 0) + "; " + timestamp();
     }
