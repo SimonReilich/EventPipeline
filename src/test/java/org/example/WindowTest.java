@@ -14,36 +14,36 @@ public class WindowTest {
     @DisplayName("Window single Event")
     void testWindowReturnEvent() {
         var node = new Window(Window.ITEM, 2, Window.ITEM, 1, new RawInput("A"));
-        assertFalse(node.give(new Event<>("A", 0, 0)).isPresent());
+        assertFalse(node.give(new Event<>("A", 0, 0)).event().isPresent());
 
         var optRes = node.give(new Event<>("A", 1, 50));
-        assertTrue(optRes.isPresent());
-        var result = optRes.get();
+        assertTrue(optRes.event().isPresent());
+        var result = optRes.event().get();
 
         assertEquals(50, result.timestamp());
-        assertArrayEquals(new Object[]{1}, (Object[]) result.data().get("A list"));
+        assertArrayEquals(new Object[]{1}, (Object[]) result.data().get("w"));
     }
 
     @Test
     @DisplayName("Window foreign Event")
     void testWindowForeignEvent() {
         var node = new Window(Window.ITEM, 1, Window.ITEM, 1, new RawInput("A"));
-        assertTrue(node.give(new Event<>("A", 0, 0)).isPresent());
-        assertFalse(node.give(new Event<>("B", 1, 50)).isPresent());
+        assertTrue(node.give(new Event<>("A", 0, 0)).event().isPresent());
+        assertFalse(node.give(new Event<>("B", 1, 50)).event().isPresent());
     }
 
     @Test
     @DisplayName("Window Size")
     void testWindowSize() {
         var node = new Window(Window.ITEM, 3, Window.ITEM, 2, new RawInput("A"));
-        assertFalse(node.give(new Event<>("A", 0, 0)).isPresent());
-        assertFalse(node.give(new Event<>("A", 1, 25)).isPresent());
+        assertFalse(node.give(new Event<>("A", 0, 0)).event().isPresent());
+        assertFalse(node.give(new Event<>("A", 1, 25)).event().isPresent());
 
         var optRes = node.give(new Event<>("A", 2, 50));
-        assertTrue(optRes.isPresent());
-        var result = optRes.get();
+        assertTrue(optRes.event().isPresent());
+        var result = optRes.event().get();
 
         assertEquals(50, result.timestamp());
-        assertEquals(2, ((Object[]) result.getValue("A list")).length);
+        assertEquals(2, ((Object[]) result.getValue("w")).length);
     }
 }
