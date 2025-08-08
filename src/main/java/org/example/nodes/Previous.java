@@ -1,6 +1,5 @@
 package org.example.nodes;
 
-import org.example.Main;
 import org.example.events.Event;
 
 import java.util.*;
@@ -39,7 +38,7 @@ public class Previous extends Node {
     }
 
     @Override
-    protected Response trigger(Event<Object> input) {
+    protected Response trigger(long timestamp) {
         var temp = saved;
         saved = current;
         current = null;
@@ -47,8 +46,8 @@ public class Previous extends Node {
             Optional<Event<Object>> result = Optional.of(new Event<>(
                     "prv",
                     temp.data(),
-                    input.timestamp())
-            );
+                    timestamp
+            ));
             return new Response(result, List.of());
         }
         return Response.empty();

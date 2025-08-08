@@ -1,6 +1,5 @@
 package org.example.nodes;
 
-import org.example.Main;
 import org.example.events.Event;
 
 import java.util.*;
@@ -37,23 +36,36 @@ public class Delay extends Node {
     }
 
     @Override
+    public Response give(Event<Object> input) {
+        var filtered = input.filter(accepts());
+        if (!filtered.getDataSet().isEmpty()) {
+            var resp = new Response(Optional.empty(), supply(filtered));
+            if (input.getTypes().contains("Synthetic" + this.hashCode())) {
+                return trigger(input.timestamp()).merge(resp);
+            } else {
+                return resp;
+            }
+        } else {
+            return Response.empty();
+        }
+    }
+
+    @Override
     protected List<Timer> supply(Event<Object> input) {
         saved.add(node.give(input));
         return List.of(new Timer(input.timestamp() + this.delay, this.hashCode()));
     }
 
     @Override
-    protected Response trigger(Event<Object> input) {
-        if (input.getTypes().contains("Synthetic" + this.hashCode())) {
+    protected Response trigger(long timestamp) {
             if (!saved.isEmpty() && saved.peek() != null && saved.peek().event().isPresent()) {
                 Optional<Event<Object>> result = Optional.of(new Event<>(
                         "del",
                         Objects.requireNonNull(saved.poll()).event().get().data(),
-                        input.timestamp())
+                        timestamp)
                 );
                 return new Response(result, List.of());
             }
-        }
-        return Response.empty();
+            return Response.empty();
     }
 }

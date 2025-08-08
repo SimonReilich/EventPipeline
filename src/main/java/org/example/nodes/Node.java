@@ -28,13 +28,13 @@ public abstract class Node {
 
     protected abstract List<Timer> supply(Event<Object> input);
 
-    protected abstract Response trigger(Event<Object> input);
+    protected abstract Response trigger(long timestamp);
 
     public Response give(Event<Object> input) {
         var filtered = input.filter(accepts());
         if (!filtered.getDataSet().isEmpty()) {
             var resp = new Response(Optional.empty(), supply(filtered));
-            return trigger(filtered).merge(resp);
+            return trigger(input.timestamp()).merge(resp);
         } else {
             return Response.empty();
         }

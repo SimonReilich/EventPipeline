@@ -1,6 +1,5 @@
 package org.example.nodes;
 
-import org.example.Main;
 import org.example.events.Event;
 
 import java.util.*;
@@ -42,6 +41,20 @@ public class Group extends Node {
     }
 
     @Override
+    public Response give(Event<Object> input) {
+        var filtered = input.filter(accepts());
+        if (!filtered.getDataSet().isEmpty()) {
+            var resp = new Response(Optional.empty(), supply(filtered));
+            if (driving.accepts().stream().anyMatch(t -> input.getTypes().contains(t))) {
+                return trigger(input.timestamp()).merge(resp);
+            }
+            return resp;
+        } else {
+            return Response.empty();
+        }
+    }
+
+    @Override
     protected List<Node> children() {
         List<Node> children = new ArrayList<>();
         children.add(driving);
@@ -78,52 +91,41 @@ public class Group extends Node {
     }
 
     @Override
-    protected Response trigger(Event<Object> input) {
-
-        if (driving.acceptsAny(input.getTypes())) {
-            var outputDriving = driving.trigger(input.filter(driving.accepts()));
+    protected Response trigger(long timestamp) {
+            var outputDriving = driving.trigger(timestamp);
             var timers = outputDriving.timers();
             if (outputDriving.event().isPresent()) {
                 Arrays.stream(other)
                         .filter(node -> !(node instanceof Window))
-                        .map(node -> node.trigger(input.filter(node.accepts())))
+                        .map(node -> node.trigger(timestamp))
                         .peek(r -> timers.addAll(r.timers()))
                         .filter(r -> r.event().isPresent())
                         .map(r -> r.event().get())
                         .flatMap(e -> e.getDataSet().stream())
-                        .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.timestamp())));
+                        .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), timestamp)));
 
                 Arrays.stream(other)
                         .filter(node -> node instanceof Window)
-                        .map(n -> n.trigger(
-                                new Event<>(
-                                        "SyntheticG" + n.hashCode(),
-                                        null,
-                                        input.timestamp()
-                                )
-                        ))
+                        .map(n -> n.trigger(-n.hashCode()))
                         .peek(r -> timers.addAll(r.timers()))
                         .filter(r -> r.event().isPresent())
                         .map(r -> r.event().get())
                         .flatMap(e -> e.getDataSet().stream())
-                        .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.timestamp())));
+                        .forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), timestamp)));
 
-                outputDriving.event().ifPresent(event -> event.getDataSet().forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), input.timestamp()))));
+                outputDriving.event().ifPresent(event -> event.getDataSet().forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), timestamp))));
 
                 Optional<Event<Object>> result = Optional.of(new Event<>(
                         "gr",
                         values.entrySet().stream()
                                 .map(e -> Map.entry(e.getKey(), e.getValue()))
                                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getKey())),
-                        input.timestamp()
+                        timestamp
                 ));
                 values.clear();
                 return new Response(result, timers);
             }
             return new Response(Optional.empty(), timers);
-        }
-
-        return Response.empty();
     }
 
 }

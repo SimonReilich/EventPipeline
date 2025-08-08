@@ -1,6 +1,5 @@
 package org.example.nodes;
 
-import org.example.Main;
 import org.example.events.Event;
 
 import java.util.*;
@@ -44,12 +43,12 @@ public class CombineLatest extends Node {
     }
 
     @Override
-    protected Response trigger(Event<Object> input) {
+    protected Response trigger(long timestamp) {
         Optional<Event<Object>> result = Optional.of(
                 new Event<>(
                         "cl",
                         values,
-                        input.timestamp()
+                        timestamp
                 )
         );
         return new Response(result, List.of());

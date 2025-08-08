@@ -1,6 +1,5 @@
 package org.example.nodes;
 
-import org.example.Main;
 import org.example.events.Event;
 
 import java.util.*;
@@ -18,6 +17,8 @@ public class Window extends Node {
     private final Character sizeMode;
     private final long size;
     private long counter;
+    private boolean synthetic;
+    private long synthTimestamp;
 
     public Window(Character rateMode, long rate, Character sizeMode, long size, Node node) {
         super();
@@ -53,6 +54,19 @@ public class Window extends Node {
     }
 
     @Override
+    public Response give(Event<Object> input) {
+        var filtered = input.filter(accepts());
+        if (!filtered.getDataSet().isEmpty()) {
+            var resp = new Response(Optional.empty(), supply(filtered));
+            synthetic = input.getTypes().contains("Synthetic" + this.hashCode());
+            synthTimestamp = synthetic ? input.timestamp() : synthTimestamp;
+            return trigger(input.timestamp()).merge(resp);
+        } else {
+            return Response.empty();
+        }
+    }
+
+    @Override
     protected List<Timer> supply(Event<Object> input) {
         var result = node.give(input);
         if (result.event().isPresent()) {
@@ -69,14 +83,13 @@ public class Window extends Node {
     }
 
     @Override
-    protected Response trigger(Event<Object> input) {
-        if (this.acceptsAny(input.getTypes())) {
+    protected Response trigger(long timestamp) {
             if (sizeMode == ITEM) {
                 while (queue.size() > size) {
                     queue.removeFirst();
                 }
             } else if (sizeMode == TIME) {
-                while (queue.getFirst() != null && queue.getFirst().getValue().getValue() < input.timestamp() - size) {
+                while (queue.getFirst() != null && queue.getFirst().getValue().getValue() < timestamp - size) {
                     queue.removeFirst();
                 }
             }
@@ -88,31 +101,29 @@ public class Window extends Node {
                     Optional<Event<Object>> res = Optional.of(new Event<>(
                             "w",
                             queue.stream().map(e -> e.getValue().getKey()).toArray(),
-                            input.timestamp()
+                            timestamp
                     ));
                     queue.clear();
                     return new Response(res, List.of());
                 }
-            } else if (rateMode == TIME && input.getTypes().contains("Synthetic" + this.hashCode())) {
+            } else if (rateMode == TIME && timestamp == synthTimestamp && synthetic) {
                 Optional<Event<Object>> res = Optional.of(new Event<>(
                         "w",
                         queue.stream().map(e -> e.getValue().getKey()).toArray(),
-                        input.timestamp()
+                        timestamp
                 ));
                 queue.clear();
                 return new Response(res, List.of());
-            } else if (rateMode == GROUP && input.getTypes().contains("SyntheticG" + this.hashCode())) {
+            } else if (rateMode == GROUP && timestamp == -this.hashCode()) {
                 Optional<Event<Object>> res = Optional.of(new Event<>(
                         "w",
                         queue.stream().map(e -> e.getValue().getKey()).toArray(),
-                        input.timestamp()
+                        timestamp
                 ));
                 queue.clear();
                 return new Response(res, List.of());
             }
-        }
 
         return Response.empty();
     }
-
 }

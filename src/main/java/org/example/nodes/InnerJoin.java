@@ -1,6 +1,5 @@
 package org.example.nodes;
 
-import org.example.Main;
 import org.example.events.Event;
 
 import java.util.*;
@@ -54,11 +53,11 @@ public class InnerJoin extends Node {
     }
 
     @Override
-    protected Response trigger(Event<Object> input) {
+    protected Response trigger(long timestamp) {
         var timers = new ArrayList<Timer>();
 
         values.putAll(Arrays.stream(other)
-                .map(n -> n.trigger(input))
+                .map(n -> n.trigger(timestamp))
                 .peek(r -> timers.addAll(r.timers()))
                 .filter(r -> r.event().isPresent())
                 .map(r -> r.event().get())
@@ -66,7 +65,7 @@ public class InnerJoin extends Node {
                 .peek(e -> values.remove(e.getKey()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2)));
 
-        var outputDriving = driving.trigger(input);
+        var outputDriving = driving.trigger(timestamp);
         timers.addAll(outputDriving.timers());
         outputDriving.event().ifPresent(d -> {
             values.clear();
@@ -80,7 +79,7 @@ public class InnerJoin extends Node {
             Optional<Event<Object>> result = Optional.of(new Event<>(
                     "ij",
                     values.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)),
-                    input.timestamp()
+                    timestamp
             ));
             return new Response(result, timers);
         }
