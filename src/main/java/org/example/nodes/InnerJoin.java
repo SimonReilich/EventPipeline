@@ -10,8 +10,14 @@ public class InnerJoin extends Node {
     private final Node driving;
     private final Node[] other;
     private final Map<String, Object> values;
+    private static long nextId = 0;
+
+    private static long newId() {
+        return nextId++;
+    }
 
     public InnerJoin(Node driving, Node... other) {
+        super(newId());
         this.driving = driving;
         this.other = other;
         this.values = new HashMap<>();
@@ -77,7 +83,7 @@ public class InnerJoin extends Node {
                 && driving.requires().stream().allMatch(values::containsKey)
         ) {
             Optional<Event<Object>> result = Optional.of(new Event<>(
-                    "ij",
+                    "ij" + id,
                     values.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)),
                     timestamp
             ));

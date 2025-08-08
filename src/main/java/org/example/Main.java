@@ -15,7 +15,7 @@ public class Main {
     public static void main(String[] args) {
 
         instance = new EventPipeline(
-                e -> System.out.println(Event.dataToString(e.data().get("cl"), 0) + "\n")
+                e -> System.out.println(Event.dataToString(e.data(), 0) + "\n")
         );
 
         instance.addNode(
@@ -28,6 +28,12 @@ public class Main {
                                 new RawInput("B")
                         ),
                         new RawInput("B")
+                )
+        );
+
+        instance.addNode(
+                new Previous(
+                        new RawInput("C")
                 )
         );
 

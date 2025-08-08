@@ -10,8 +10,14 @@ public class OuterJoin extends Node {
     private final Node driving;
     private final Node[] other;
     private final Map<String, Object> values;
+    private static long nextId = 0;
+
+    private static long newId() {
+        return nextId++;
+    }
 
     public OuterJoin(Node driving, Node... other) {
+        super(newId());
         this.driving = driving;
         this.other = other;
         this.values = new HashMap<>();
@@ -71,7 +77,7 @@ public class OuterJoin extends Node {
         });
 
         Optional<Event<Object>> result = Optional.of(new Event<>(
-                "oj",
+                "oj" + id,
                 values.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)),
                 timestamp
         ));

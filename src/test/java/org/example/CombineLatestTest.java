@@ -26,7 +26,7 @@ public class CombineLatestTest {
         var result = optRes.event().get();
 
         assertEquals(100, result.timestamp());
-        assertEquals(3, (((Map<String, ?>) result.data().get("cl")).size()));
+        assertEquals(3, (((Map<String, ?>) result.data().get("cl" + node.id)).size()));
     }
 
     @Test

@@ -19,9 +19,14 @@ public class Window extends Node {
     private long counter;
     private boolean synthetic;
     private long synthTimestamp;
+    private static long nextId = 0;
+
+    private static long newId() {
+        return nextId++;
+    }
 
     public Window(Character rateMode, long rate, Character sizeMode, long size, Node node) {
-        super();
+        super(newId());
 
         assert rateMode == ITEM || rateMode == TIME || rateMode == GROUP;
         assert sizeMode == ITEM || sizeMode == TIME;
@@ -99,7 +104,7 @@ public class Window extends Node {
             if (counter >= rate) {
                 counter = 0;
                 Optional<Event<Object>> res = Optional.of(new Event<>(
-                        "w",
+                        "w" + id,
                         queue.stream().map(e -> e.getValue().getKey()).toArray(),
                         timestamp
                 ));
@@ -108,7 +113,7 @@ public class Window extends Node {
             }
         } else if (rateMode == TIME && timestamp == synthTimestamp && synthetic) {
             Optional<Event<Object>> res = Optional.of(new Event<>(
-                    "w",
+                    "w" + id,
                     queue.stream().map(e -> e.getValue().getKey()).toArray(),
                     timestamp
             ));
@@ -116,7 +121,7 @@ public class Window extends Node {
             return new Response(res, List.of());
         } else if (rateMode == GROUP && timestamp == -this.hashCode()) {
             Optional<Event<Object>> res = Optional.of(new Event<>(
-                    "w",
+                    "w" + id,
                     queue.stream().map(e -> e.getValue().getKey()).toArray(),
                     timestamp
             ));

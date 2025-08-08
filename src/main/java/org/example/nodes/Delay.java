@@ -9,9 +9,14 @@ public class Delay extends Node {
     private final long delay;
     private final Node node;
     private final Queue<Response> saved;
+    private static long nextId = 0;
+
+    private static long newId() {
+        return nextId++;
+    }
 
     public Delay(long delay, Node node) {
-        super();
+        super(newId());
         this.delay = delay;
         this.node = node;
         this.saved = new LinkedList<>();
@@ -60,7 +65,7 @@ public class Delay extends Node {
     protected Response trigger(long timestamp) {
         if (!saved.isEmpty() && saved.peek() != null && saved.peek().event().isPresent()) {
             Optional<Event<Object>> result = Optional.of(new Event<>(
-                    "del",
+                    "del" + id,
                     saved.poll().event().get().data(),
                     timestamp)
             );

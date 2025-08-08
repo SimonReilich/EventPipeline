@@ -11,8 +11,14 @@ public class Group extends Node {
     private final long tolerance;
     private final Node[] other;
     private final Map<String, Map.Entry<Object, Long>> values;
+    private static long nextId = 0;
+
+    private static long newId() {
+        return nextId++;
+    }
 
     public Group(Node driving, Node... other) {
+        super(newId());
         this.driving = driving;
         this.tolerance = 0;
         this.other = other;
@@ -20,6 +26,7 @@ public class Group extends Node {
     }
 
     public Group(long tolerance, Node driving, Node... other) {
+        super(newId());
         this.driving = driving;
         this.tolerance = tolerance;
         this.other = other;
@@ -116,7 +123,7 @@ public class Group extends Node {
             outputDriving.event().ifPresent(event -> event.getDataSet().forEach(e -> values.put(e.getKey(), Map.entry(e.getValue(), timestamp))));
 
             Optional<Event<Object>> result = Optional.of(new Event<>(
-                    "gr",
+                    "gr" + id,
                     values.entrySet().stream()
                             .map(e -> Map.entry(e.getKey(), e.getValue()))
                             .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getKey())),

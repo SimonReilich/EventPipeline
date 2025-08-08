@@ -9,6 +9,12 @@ import java.util.Set;
 
 public abstract class Node {
 
+    public final long id;
+
+    public Node(long id) {
+        this.id = id;
+    }
+
     // dependencies of the node + synthetic signals
     public abstract Set<String> accepts();
 

@@ -12,6 +12,7 @@ public class RawInput extends Node {
     private Event<Object> input;
 
     public RawInput(String event) {
+        super(-1);
         this.event = event;
     }
 

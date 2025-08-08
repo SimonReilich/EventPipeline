@@ -30,7 +30,7 @@ public class PreviousTest {
         var result = optRes.event().get();
 
         assertEquals(50, result.timestamp());
-        assertEquals(0, ((Map<String, ?>) result.data().get("prv")).get("A"));
+        assertEquals(0, ((Map<String, ?>) result.data().get("prv" + node.id)).get("A"));
     }
 
     @Test

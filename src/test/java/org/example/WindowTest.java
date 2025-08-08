@@ -21,7 +21,7 @@ public class WindowTest {
         var result = optRes.event().get();
 
         assertEquals(50, result.timestamp());
-        assertArrayEquals(new Object[]{1}, (Object[]) result.data().get("w"));
+        assertArrayEquals(new Object[]{1}, (Object[]) result.data().get("w" + node.id));
     }
 
     @Test
@@ -44,6 +44,6 @@ public class WindowTest {
         var result = optRes.event().get();
 
         assertEquals(50, result.timestamp());
-        assertEquals(2, ((Object[]) result.getValue("w")).length);
+        assertEquals(2, ((Object[]) result.getValue("w" + node.id)).length);
     }
 }

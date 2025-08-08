@@ -9,8 +9,14 @@ public class CombineLatest extends Node {
 
     private final Node[] children;
     private final Map<String, Object> values;
+    private static long nextId = 0;
+
+    private static long newId() {
+        return nextId++;
+    }
 
     public CombineLatest(Node... children) {
+        super(newId());
         this.children = children;
         this.values = new HashMap<>();
     }
@@ -46,7 +52,7 @@ public class CombineLatest extends Node {
     protected Response trigger(long timestamp) {
         Optional<Event<Object>> result = Optional.of(
                 new Event<>(
-                        "cl",
+                        "cl" + id,
                         values,
                         timestamp
                 )

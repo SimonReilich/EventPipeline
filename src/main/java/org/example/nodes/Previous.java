@@ -12,9 +12,14 @@ public class Previous extends Node {
     private final Node node;
     private Event<Object> saved;
     private Event<Object> current;
+    private static long nextId = 0;
+
+    private static long newId() {
+        return nextId++;
+    }
 
     public Previous(Node node) {
-        super();
+        super(newId());
         this.node = node;
     }
 
@@ -47,7 +52,7 @@ public class Previous extends Node {
         current = null;
         if (temp != null) {
             Optional<Event<Object>> result = Optional.of(new Event<>(
-                    "prv",
+                    "prv" + id,
                     temp.data(),
                     timestamp
             ));

@@ -38,7 +38,7 @@ public class OuterJoinTest {
 
         var result = resOpt.event().get();
         assertEquals(100, result.timestamp());
-        assertEquals(0, (Integer) ((Map<String, ?>) result.data().get("oj")).get("A"));
+        assertEquals(0, (Integer) ((Map<String, ?>) result.data().get("oj" + node.id)).get("A"));
     }
 
     @Test
